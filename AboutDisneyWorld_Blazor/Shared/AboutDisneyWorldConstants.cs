@@ -2,7 +2,7 @@
 {
     public static class Constants
     {
-        public const string MainWindowHeader = "Explore Disney World";
+        public const string MainWindowHeader = "Disney World Diary";
         public const string MainWindowTagline = "Disney World is home to four theme parks, two water parks, and Saratoga Springs";
 
         public const string AnimalKingdomHeader = "Animal Kingdom";
@@ -17,6 +17,7 @@
         public const string MagicKingdomHeader = "Magic Kingdom";
         public const string MagicKingdomTagline = "Heal your inner child and get transported to the most magical place on earth";
 
-        public const string SaratogaSpringsHeader = "Saratoga Springs";
+        public const string DisneySpringsHeader = "Disney Springs";
+        public const string DisneySpringsTagLine = "Welcome to Disney Springs - a truly amazing place featuring an eclectic mix of unique boutiques, one-of-a-kind eateries and jaw-dropping entertainment. Here you're sure to discover Happily Whatever You're After";
     }
 }
