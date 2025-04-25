@@ -1,13 +1,13 @@
 ﻿namespace AboutDisneyWorld_Blazor.Models
 {
-    public class PhotoModel(string href, string title, string caption, DateTime date)
+    record PhotoModel
     {
-        public string Href => href;
+        public required string Href { get; init; }
 
-        public string Title => title;
+        public required string  Title { get; init; }
 
-        public string Caption => caption;
+        public required string Caption { get; init; }
 
-        public DateTime Date => date;
+        public DateTime Date { get; init; }
     }
 }
