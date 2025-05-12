@@ -1,6 +1,31 @@
 ﻿@page "/"
+@inject MongoDBPhotoService PhotoService
 
 <PageTitle>Disney World Diary</PageTitle>
 
 <h1>@Constants.MainWindowHeader</h1>
 <p>@Constants.MainWindowTagline</p>
+
+<div class="row">
+    @foreach (var photo in _photos)
+    {
+        <div class="col-md-4">
+            <div class="card">
+                <h5 class="card-title">Title: @photo.Title</h5>
+                <h5 class="card-title">Caption: @photo.Caption</h5>
+                <h5 class="card-title">Uploaded Date: @photo.Date</h5>
+                <img class="card-img-top" src="Uploads/@photo.Name" alt="@photo.Title" />
+            </div>
+        </div>
+    }
+</div>
+
+@code{
+    private List<Photo> _photos = new();
+    //private Photo newPhoto = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _photos = await PhotoService.GetAllAsync();
+    }
+}
