@@ -16,4 +16,7 @@ public class MongoDBPhotoService
 
     public async Task<List<Photo>> GetAllAsync() =>
         await _photoCollection.Find(_ => true).ToListAsync();
+
+    public async Task AddAsync(Photo item) =>
+        await _photoCollection.InsertOneAsync(item);
 }

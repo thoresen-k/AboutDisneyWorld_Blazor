@@ -7,14 +7,14 @@ namespace AboutDisneyWorld_Blazor.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public required string ID { get; init; }
+        public string? ID { get; set; }
 
-        public required string Name { get; init; }
+        public string Name { get; set; }
 
-        public required string  Title { get; init; }
+        public string  Title { get; set; }
 
-        public required string Caption { get; init; }
+        public string Caption { get; set; }
 
-        public DateTime Date { get; init; }
+        public DateTime Date { get; set; }
     }
 }
