@@ -1,0 +1,26 @@
+@page "/testmongo"
+@using AboutDisneyWorld_Blazor.Services
+@inject MongoDBPhotoService PhotoService
+
+<h1>MongoDB Test</h1>
+
+<button @onclick="RunTest">Run Test</button>
+
+<p>@status</p>
+
+@code {
+    private string status = "Waiting...";
+
+    private async Task RunTest()
+    {
+        try
+        {
+            var photos = await PhotoService.GetAllAsync();
+            status = $"Retrieved {photos.Count} photo(s) from MongoDB.";
+        }
+        catch (Exception ex)
+        {
+            status = $"Error: {ex.Message}";
+        }
+    }
+}

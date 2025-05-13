@@ -1,0 +1,9 @@
+@page "/hello"
+
+<button class="btn btn-primary" @onclick="ButtonClick">Click</button>
+
+@code {
+    private void ButtonClick(MouseEventArgs args){
+        Console.WriteLine("ButtonClicked");
+    }
+}
