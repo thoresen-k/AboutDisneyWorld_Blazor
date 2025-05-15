@@ -1,12 +1,12 @@
-using AboutDisneyWorld_Blazor;
 using AboutDisneyWorld_Blazor.Services;
 using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// server interactive
+builder.Services.AddRazorPages(); // ✅ Required for _Host.cshtml
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
 builder.Services.AddSingleton<MongoDBPhotoService>();
 builder.Services.Configure<FormOptions>(options =>
 {
@@ -15,23 +15,19 @@ builder.Services.Configure<FormOptions>(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
+app.UseRouting(); // ✅ Needed before MapBlazorHub and MapFallbackToPage
 app.UseAntiforgery();
 
+app.MapRazorPages();         // ✅ Required to support _Host.cshtml
 app.MapBlazorHub();
-
-// default server interactive
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+app.MapFallbackToPage("/_Host");
 
 app.Run();

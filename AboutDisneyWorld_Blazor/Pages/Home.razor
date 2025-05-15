@@ -6,7 +6,7 @@
 <h1>@Constants.MainWindowHeader</h1>
 <p>@Constants.MainWindowTagline</p>
 
-<NavLink class="btn btn-primary" @onclick="ButtonClick">Click Me</NavLink>
+<NavLink class="btn btn-primary" href="/addphoto">+ Add Photo</NavLink>
 
 <div class="row">
     @foreach (var photo in _photos)
@@ -29,9 +29,5 @@
     protected override async Task OnInitializedAsync()
     {
         _photos = await PhotoService.GetAllAsync();
-    }
-
-    private void ButtonClick(){
-        Console.WriteLine("ButtonClicked");
     }
 }
