@@ -3,7 +3,7 @@
     public static class Constants
     {
         public const string MainWindowHeader = "Disney World Diary";
-        public const string MainWindowTagline = "Disney World is home to four theme parks, two water parks, and Saratoga Springs";
+        public const string MainWindowTagline = "Disney World is home to four theme parks, two water parks, and Disney Springs";
 
         public const string AnimalKingdomHeader = "Animal Kingdom";
         public const string AnimalKingdomTagline = "Animal Kingdom Park is for the animal lovers";

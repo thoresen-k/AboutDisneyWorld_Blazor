@@ -4,6 +4,15 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <StaticWebAssetsEnabled>true</StaticWebAssetsEnabled>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Blazor Server components package (usually included transitively) -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.0" />
+
+    <!-- MongoDB Driver - consider upgrading to latest stable -->
+    <PackageReference Include="MongoDB.Driver" Version="2.22.1" />
+  </ItemGroup>
 
 </Project>

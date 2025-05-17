@@ -1,0 +1,91 @@
+﻿@page "/addphoto"
+@inject MongoDBPhotoService PhotoService
+@inject IWebHostEnvironment Env
+
+<PageTitle>Add Photo</PageTitle>
+
+<h3>Add Photo</h3>
+
+<EditForm Model="@newPhoto" OnValidSubmit="InsertPhoto" FormName="AddPhotoForm">
+    <div class="mb-3">
+        <label class="form-label">Select Photo to Upload</label>
+        <InputFile OnChange="@HandleFileSelected" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Photo Title</label>
+        <InputText @bind-Value="newPhoto.Title" placeholder="Title" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <InputText @bind-Value="newPhoto.Name" placeholder="Filename (e.g., photo.jpg)" class="form-control" />
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(previewImageUrl))
+    {
+        <div class="mb-3">
+            <label class="form-label">Preview</label>
+            <br>
+            <img src="@previewImageUrl" alt="Preview" class="img-thumbnail" style="max-width: 300px;" />
+        </div>
+    }
+
+    <div>
+        <p><strong>Debug:</strong> Title = @newPhoto.Title, Name = @newPhoto.Name</p>
+    </div>
+
+    <button type="submit" class="btn btn-success">Save</button>
+</EditForm>
+
+@code {
+    private Photo newPhoto = new();
+    private IBrowserFile? uploadedFile;
+    private string? previewImageUrl;
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        Console.WriteLine("HandleFileSelected triggered"); // Confirm trigger
+        uploadedFile = e.File;
+
+        //var uniqueFileName = $"{Guid.NewGuid()}_{uploadedFile.Name}";
+        var uniqueFileName = newPhoto.Name;
+        var uploadPath = Path.Combine(Env.WebRootPath, "Uploads"); 
+        Directory.CreateDirectory(uploadPath);
+        var filePath = Path.Combine(uploadPath, uniqueFileName);
+        Console.WriteLine("filePath:" + filePath);
+
+        await using var fileStream = new FileStream(filePath, FileMode.Create);
+        await uploadedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(fileStream);
+
+        // Base64 preview
+        using var ms = new MemoryStream();
+        await uploadedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(ms);
+        var buffer = ms.ToArray();
+        var base64 = Convert.ToBase64String(buffer);
+        var contentType = string.IsNullOrWhiteSpace(uploadedFile.ContentType) ? "image/jpeg" : uploadedFile.ContentType;
+        previewImageUrl = $"data:{contentType};base64,{base64}";
+
+        StateHasChanged(); // Show preview
+    }
+
+    private async Task InsertPhoto()
+    {
+        Console.WriteLine($"Title: {newPhoto.Title}");
+        Console.WriteLine($"Name: {newPhoto.Name}");
+
+        if (!string.IsNullOrWhiteSpace(newPhoto.Name) && !string.IsNullOrWhiteSpace(newPhoto.Title))
+        {
+            await PhotoService.AddAsync(newPhoto);
+            Console.WriteLine("Photo added to MongoDB");
+        }
+        else
+        {
+            Console.WriteLine("Missing file or title");
+        }
+
+        newPhoto = new Photo();
+        uploadedFile = null;
+        previewImageUrl = null;
+    }
+}
