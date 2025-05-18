@@ -8,15 +8,15 @@
 
 <NavLink class="btn btn-primary" href="/addphoto">+ Add Photo</NavLink>
 
-<div class="row">
+<div class="row mb-3">
     @foreach (var photo in _photos)
     {
         <div class="col-md-4">
-            <div class="card">
-                <h6 class="card-title">Title: @photo.Title</h6>
-                <p class="card-title">Caption: @photo.Caption</p>
-                <p class="card-title">Uploaded Date: @photo.Date</p>
-                <img class="card-img-top" src="Uploads/@photo.Name" alt="@photo.Title" />
+            <div class="card" style="padding: 10px;">
+                <p>Title: @photo.Title </p>
+                <p>Caption: @photo.Caption </p>
+                <p>Uploaded Date: @photo.Date</p>
+                <img class="card-img-top" loading="lazy" style="margin: 0 auto; max-width: 325px;" src="@photo.PreviewImageSrc" alt="@photo.Title" />
             </div>
         </div>
     }

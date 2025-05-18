@@ -13,6 +13,7 @@
 
     <!-- MongoDB Driver - consider upgrading to latest stable -->
     <PackageReference Include="MongoDB.Driver" Version="2.22.1" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.8" />
   </ItemGroup>
 
 </Project>
