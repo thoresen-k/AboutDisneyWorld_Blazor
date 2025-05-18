@@ -19,4 +19,10 @@ public class MongoDBPhotoService
 
     public async Task AddAsync(Photo item) =>
         await _photoCollection.InsertOneAsync(item);
+
+    
+    public async Task<Photo> GetPhotoByIdAsync(string id)
+    {
+        return await _photoCollection.Find(p => p.ID.Equals(id)).FirstOrDefaultAsync();
+    }   
 }
