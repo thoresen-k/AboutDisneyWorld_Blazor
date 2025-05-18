@@ -1,4 +1,5 @@
 ﻿@page "/"
+@inject HttpClient Http
 @inject MongoDBPhotoService PhotoService
 
 <PageTitle>Disney World Diary</PageTitle>
@@ -23,7 +24,7 @@
                 <p>Title: @photo.Title </p>
                 <p>Caption: @photo.Caption </p>
                 <p>Uploaded Date: @photo.Date</p>
-                <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; max-width: 325px;" src="@photo.PreviewImageSrc" alt="@photo.Title" />
+                <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; max-width: 150px;" src="@photo.PreviewImageSrc" alt="@photo.Title" />
 
                 <button class="btn btn-primary mx-auto" style="width: auto;" @onclick="() => ShowFullImage(photo.ID.ToString())">View Full Image</button>
             </div>
@@ -66,11 +67,32 @@
     private string fullImageData = string.Empty;
     bool isModalVisible = false;
 
-    protected override async Task OnInitializedAsync()
+ protected override async Task OnInitializedAsync()
+{
+    try
     {
-        _photos = await PhotoService.GetAllAsync();
-        loading = false;
+        var photos = await Http.GetFromJsonAsync<List<Photo>>("api/photo/all");
+
+        _photos = photos?.Select(p => new Photo
+        {
+            ID = p.ID,
+            Title = p.Title,
+            Caption = p.Caption,
+            Date = p.Date,
+            FileName = p.FileName,
+            ContentType = p.ContentType,
+            ImageData = p.ImageData, 
+            PreviewData = p.PreviewData, // base64 string already included
+        }).ToList() ?? new List<Photo>();
     }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Error fetching photos: {ex.Message}");
+    }
+
+    loading = false;
+}
+
     
     private async Task ShowFullImage(string photoId)
     {
