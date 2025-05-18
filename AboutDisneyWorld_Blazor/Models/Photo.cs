@@ -7,14 +7,24 @@ namespace AboutDisneyWorld_Blazor.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string? ID { get; set; }
+        public string ID { get; set; }
 
-        public string Name { get; set; }
+        public string FileName { get; set; } = string.Empty;
 
-        public string  Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
-        public string Caption { get; set; }
+        public string Caption { get; set; } = string.Empty;
 
-        public DateTime Date { get; set; }
+        public byte[] ImageData { get; set; } = [];
+
+        public byte[] PreviewData { get; set; } = [];
+        
+        public string ContentType { get; set; } = string.Empty;
+        
+        public string ImageSrc => $"data:{ContentType};base64,{Convert.ToBase64String(ImageData)}";
+
+        public string PreviewImageSrc => $"data:{ContentType};base64,{Convert.ToBase64String(PreviewData)}";
+
+        public DateTime Date { get; set; } = DateTime.UtcNow;
     }
 }

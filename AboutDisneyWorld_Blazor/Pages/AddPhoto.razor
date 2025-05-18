@@ -1,42 +1,49 @@
 ﻿@page "/addphoto"
+@using SixLabors.ImageSharp
+@using SixLabors.ImageSharp.Processing
 @inject MongoDBPhotoService PhotoService
 @inject IWebHostEnvironment Env
 
 <PageTitle>Add Photo</PageTitle>
 
-<h3>Add Photo</h3>
+<div class="mb-3">
+    <h3>Add Photo</h3>
 
-<EditForm Model="@newPhoto" OnValidSubmit="InsertPhoto" FormName="AddPhotoForm">
-    <div class="mb-3">
-        <label class="form-label">Select Photo to Upload</label>
-        <InputFile OnChange="@HandleFileSelected" />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Photo Title</label>
-        <InputText @bind-Value="newPhoto.Title" placeholder="Title" class="form-control" />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Name</label>
-        <InputText @bind-Value="newPhoto.Name" placeholder="Filename (e.g., photo.jpg)" class="form-control" />
-    </div>
-
-    @if (!string.IsNullOrWhiteSpace(previewImageUrl))
-    {
-        <div class="mb-3">
-            <label class="form-label">Preview</label>
-            <br>
-            <img src="@previewImageUrl" alt="Preview" class="img-thumbnail" style="max-width: 300px;" />
+    <EditForm Model="@newPhoto" OnValidSubmit="InsertPhoto" FormName="AddPhotoForm">
+        <div class="mb-3 d-flex align-items-center gap-2">
+            <label class="form-label btn btn-primary" for="fileselect">Select Photo to Upload</label>
+            <InputFile style="display: none" id="fileselect" OnChange="@HandleFileSelected" />
+            
+            @if(uploadedFile != null){
+                <p>Selected Photo: @newPhoto.FileName</p>
+            }
+            else{
+                <p>No Photo Selected</p>
+            }
         </div>
-    }
 
-    <div>
-        <p><strong>Debug:</strong> Title = @newPhoto.Title, Name = @newPhoto.Name</p>
-    </div>
+        <div class="mb-3">
+            <label class="form-label" for="title">Photo Title</label>
+            <InputText @bind-Value="newPhoto.Title" id="title" placeholder="Title" class="form-control" />
+        </div>
 
-    <button type="submit" class="btn btn-success">Save</button>
-</EditForm>
+        <div class="mb-3">
+            <label class="form-label" for="caption">Photo Caption</label>
+            <InputText @bind-Value="newPhoto.Caption" id="caption" placeholder="Caption" class="form-control" />
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(previewImageUrl))
+        {
+            <div class="mb-3">
+                <label class="form-label">Preview</label>
+                <br>
+                <img src="@previewImageUrl" alt="Preview" class="img-thumbnail" style="max-width: 300px;" />
+            </div>
+        }
+        
+        <button type="submit" class="btn btn-success">Save</button>
+    </EditForm>
+</div>
 
 @code {
     private Photo newPhoto = new();
@@ -48,16 +55,6 @@
         Console.WriteLine("HandleFileSelected triggered"); // Confirm trigger
         uploadedFile = e.File;
 
-        //var uniqueFileName = $"{Guid.NewGuid()}_{uploadedFile.Name}";
-        var uniqueFileName = newPhoto.Name;
-        var uploadPath = Path.Combine(Env.WebRootPath, "Uploads"); 
-        Directory.CreateDirectory(uploadPath);
-        var filePath = Path.Combine(uploadPath, uniqueFileName);
-        Console.WriteLine("filePath:" + filePath);
-
-        await using var fileStream = new FileStream(filePath, FileMode.Create);
-        await uploadedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(fileStream);
-
         // Base64 preview
         using var ms = new MemoryStream();
         await uploadedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(ms);
@@ -66,15 +63,31 @@
         var contentType = string.IsNullOrWhiteSpace(uploadedFile.ContentType) ? "image/jpeg" : uploadedFile.ContentType;
         previewImageUrl = $"data:{contentType};base64,{base64}";
 
+        // Preview Data
+        using var image = Image.Load(buffer);
+        image.Mutate(x => x.Resize(new ResizeOptions
+        {
+            Mode = ResizeMode.Max,
+            Size = new Size(325, 0)
+        }));
+
+        using var msPreview = new MemoryStream();
+        await image.SaveAsJpegAsync(msPreview);
+        newPhoto.PreviewData = msPreview.ToArray();
+
+        newPhoto.FileName = uploadedFile.Name;
+        newPhoto.ImageData = buffer;
+        newPhoto.ContentType = contentType;
+
         StateHasChanged(); // Show preview
     }
 
     private async Task InsertPhoto()
     {
         Console.WriteLine($"Title: {newPhoto.Title}");
-        Console.WriteLine($"Name: {newPhoto.Name}");
+        Console.WriteLine($"Name: {newPhoto.FileName}");
 
-        if (!string.IsNullOrWhiteSpace(newPhoto.Name) && !string.IsNullOrWhiteSpace(newPhoto.Title))
+        if (!string.IsNullOrWhiteSpace(newPhoto.FileName) && !string.IsNullOrWhiteSpace(newPhoto.Title))
         {
             await PhotoService.AddAsync(newPhoto);
             Console.WriteLine("Photo added to MongoDB");
