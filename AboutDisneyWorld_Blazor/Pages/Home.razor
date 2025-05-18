@@ -23,7 +23,7 @@
                 <p>Title: @photo.Title </p>
                 <p>Caption: @photo.Caption </p>
                 <p>Uploaded Date: @photo.Date</p>
-                <img class="card-img-top" loading="lazy" style="margin: 0 auto; max-width: 325px;" src="@photo.PreviewImageSrc" alt="@photo.Title" />
+                <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; max-width: 325px;" src="@photo.PreviewImageSrc" alt="@photo.Title" />
 
                 <button class="btn btn-primary mx-auto" style="width: auto;" @onclick="() => ShowFullImage(photo.ID.ToString())">View Full Image</button>
             </div>
@@ -74,6 +74,7 @@
     
     private async Task ShowFullImage(string photoId)
     {
+        loadingModal = true;
         isModalVisible = true;
         var photo = await PhotoService.GetPhotoByIdAsync(photoId);
         loadingModal = false;
