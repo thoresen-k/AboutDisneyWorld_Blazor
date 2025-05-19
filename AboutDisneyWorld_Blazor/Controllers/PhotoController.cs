@@ -24,7 +24,8 @@ public class PhotoController : ControllerBase
     {
         var photos = await _photoService.GetAllAsync();
 
-        var result = photos.Select(p => new {
+        var result = photos.Select(p => new
+        {
             p.ID,
             p.Title,
             p.Caption,
@@ -32,7 +33,7 @@ public class PhotoController : ControllerBase
             p.FileName,
             p.ContentType,
             p.ImageData,
-            p.PreviewData
+            p.PreviewData,
         });
 
         return Ok(result);
@@ -41,10 +42,11 @@ public class PhotoController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetPhoto(string id)
     {
-        var cacheKey = "Photo_" + id;
+        var sanitizedId = id.Trim('{', '}'); // <- Sanitize to ensure it's a valid ObjectId string
+        var cacheKey = "Photo_" + sanitizedId;
         if (!_cache.TryGetValue(cacheKey, out Photo? photo))
         {
-            photo = await _photoService.GetPhotoByIdAsync(id);
+            photo = await _photoService.GetPhotoByIdAsync(sanitizedId);
             if (photo == null || photo.ImageData == null)
                 return NotFound();
 
@@ -58,10 +60,13 @@ public class PhotoController : ControllerBase
     }
 
     [HttpPost("upload")]
-    public async Task<IActionResult> UploadPhoto([FromForm] IFormFile file, [FromForm] string title, [FromForm] string caption)
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadPhoto([FromForm] PhotoUploadDto photoUpload)
     {
         Console.WriteLine("UPLOAD endpoint hit");  // ✅ Confirm this shows up
 
+        var file = photoUpload.File;
         const long maxFileSize = 10 * 1024 * 1024; // 10 MB
         if (file.Length > maxFileSize)
         {
@@ -89,8 +94,8 @@ public class PhotoController : ControllerBase
         var previewData = msPreview.ToArray();
         var photo = new Photo
         {
-            Title = title,
-            Caption = caption,
+            Title = photoUpload.Title,
+            Caption = photoUpload.Caption,
             ContentType = file.ContentType,
             FileName = file.FileName,
             ImageData = buffer,
@@ -98,7 +103,7 @@ public class PhotoController : ControllerBase
             Date = DateTime.UtcNow
         };
 
-        Console.WriteLine($"Uploading: {title}, {caption}, {file.FileName}, size: {file.Length}");
+        Console.WriteLine($"Uploading: {photoUpload.Title}, {photoUpload.Caption}, {file.FileName}, size: {file.Length}");
 
         await _photoService.AddAsync(photo);
 
@@ -108,7 +113,6 @@ public class PhotoController : ControllerBase
             AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
         });
 
-        return Ok(new { message = "Upload successful." });
-        
+        return Ok(new UploadResult { Id = photo.ID.ToString() });
     }
 }

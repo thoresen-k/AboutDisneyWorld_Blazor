@@ -55,6 +55,7 @@
     {
         Console.WriteLine("HandleFileSelected triggered"); // Confirm trigger
         uploadedFile = e.File;
+        newPhoto.FileName = uploadedFile.Name;
 
         // Base64 preview
         using var ms = new MemoryStream();
@@ -63,22 +64,6 @@
         var base64 = Convert.ToBase64String(buffer);
         var contentType = string.IsNullOrWhiteSpace(uploadedFile.ContentType) ? "image/jpeg" : uploadedFile.ContentType;
         previewImageUrl = $"data:{contentType};base64,{base64}";
-
-        // Preview Data
-        using var image = Image.Load(buffer);
-        image.Mutate(x => x.Resize(new ResizeOptions
-        {
-            Mode = ResizeMode.Max,
-            Size = new Size(325, 0)
-        }));
-
-        using var msPreview = new MemoryStream();
-        await image.SaveAsJpegAsync(msPreview);
-        newPhoto.PreviewData = msPreview.ToArray();
-
-        newPhoto.FileName = uploadedFile.Name;
-        newPhoto.ImageData = buffer;
-        newPhoto.ContentType = contentType;
 
         StateHasChanged(); // Show preview
     }
@@ -97,9 +82,9 @@
             var fileContent = new StreamContent(stream);
             fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(uploadedFile.ContentType);
 
-            content.Add(fileContent, "file", uploadedFile.Name);
-            content.Add(new StringContent(newPhoto.Title), "title");
-            content.Add(new StringContent(newPhoto.Caption), "caption");
+            content.Add(fileContent, "File", uploadedFile.Name);
+            content.Add(new StringContent(newPhoto.Title), "Title");
+            content.Add(new StringContent(newPhoto.Caption), "Caption");
 
             var response = await Http.PostAsync("api/photo/upload", content);
             if (response.IsSuccessStatusCode)

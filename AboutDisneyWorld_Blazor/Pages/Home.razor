@@ -24,7 +24,7 @@
                 <p>Title: @photo.Title </p>
                 <p>Caption: @photo.Caption </p>
                 <p>Uploaded Date: @photo.Date</p>
-                <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; max-width: 150px;" src="@photo.PreviewImageSrc" alt="@photo.Title" />
+                <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; max-width: 150px;" src="/api/photo/@photo.ID" alt="@photo.Title" />
 
                 <button class="btn btn-primary mx-auto" style="width: auto;" @onclick="() => ShowFullImage(photo.ID.ToString())">View Full Image</button>
             </div>
@@ -51,7 +51,7 @@
                     <div class="modal-body">
                         <p>Caption: @selectedPhoto.Caption </p>
                         <p>Uploaded Date: @selectedPhoto.Date</p>
-                        <img src="@fullImageData" class="img-fluid rounded" style="margin: 0 auto"/>
+                        <img src="/api/photo/{@selectedPhoto.ID}" class="img-fluid rounded" style="margin: 0 auto"/>
                     </div>
                 }
             </div>

@@ -34,36 +34,25 @@ var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-    });
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
     
 }
 
-/*app.MapGet("/photos/{id}", async (string id, MongoDBPhotoService photoService, HttpContext context) =>
-{
-    var photo = await photoService.GetPhotoByIdAsync(id);
-    if (photo is null)
-    {
-        return Results.NotFound();
-    }
-        
-
-    context.Response.Headers.CacheControl = "public,max-age=86400";
-    return Results.File(photo.PreviewData, photo.ContentType);
-});*/
-
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting(); // ✅ Needed before MapBlazorHub and MapFallbackToPage
+
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+});
+
 app.UseAntiforgery();
 
 app.MapControllers();
-app.MapGet("/api/photo/test", () => "Hello from photo API!");
 
 app.MapRazorPages();         // ✅ Required to support _Host.cshtml
 app.MapBlazorHub();
