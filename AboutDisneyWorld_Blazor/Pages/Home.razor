@@ -1,4 +1,5 @@
 ﻿@page "/"
+@inject HttpClient Http
 @inject MongoDBPhotoService PhotoService
 
 <PageTitle>Disney World Diary</PageTitle>
@@ -6,28 +7,110 @@
 <h1>@Constants.MainWindowHeader</h1>
 <p>@Constants.MainWindowTagline</p>
 
-<NavLink class="btn btn-primary" href="/addphoto">+ Add Photo</NavLink>
+<NavLink class="btn btn-primary mb-3" href="/addphoto">+ Add Photo</NavLink>
 
-<div class="row">
+@if(loading)
+{
+    <div>
+        <p> <img src="mickeymouse.png" style="height: 50px;"> Loading photos...</p>
+    </div>
+}
+
+<div class="row mb-3">
     @foreach (var photo in _photos)
     {
         <div class="col-md-4">
-            <div class="card">
-                <h6 class="card-title">Title: @photo.Title</h6>
-                <p class="card-title">Caption: @photo.Caption</p>
-                <p class="card-title">Uploaded Date: @photo.Date</p>
-                <img class="card-img-top" src="Uploads/@photo.Name" alt="@photo.Title" />
+            <div class="card" style="padding: 10px;">
+                <p>Title: @photo.Title </p>
+                <p>Caption: @photo.Caption </p>
+                <p>Uploaded Date: @photo.Date</p>
+                <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; max-width: 150px;" src="/api/photo/@photo.ID" alt="@photo.Title" />
+
+                <button class="btn btn-primary mx-auto" style="width: auto;" @onclick="() => ShowFullImage(photo.ID.ToString())">View Full Image</button>
             </div>
         </div>
     }
 </div>
 
+@if (isModalVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" @onkeydown="CloseModal" style="background-color: rgba(0,0,0,0.5);" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                @if(loadingModal || selectedPhoto is null)
+                {
+                    <div class="mx-auto modal-body">
+                        <img src="mickeymouse.png" style="height: 50px;"> Loading...
+                    </div>
+                }
+                else{
+                    <div class="modal-header">
+                        <h5 class="modal-title">Full Image: @selectedPhoto.Title</h5>
+                        <button type="button" class="btn-close" @onclick="@(() => CloseModal(null))"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Caption: @selectedPhoto.Caption </p>
+                        <p>Uploaded Date: @selectedPhoto.Date</p>
+                        <img src="/api/photo/{@selectedPhoto.ID}" class="img-fluid rounded" style="margin: 0 auto"/>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 @code{
     private List<Photo> _photos = new();
-    private Photo newPhoto = new();
+    private bool loading = true;
+    private bool loadingModal = true;
+    private Photo? selectedPhoto = new();
+    private string fullImageData = string.Empty;
+    bool isModalVisible = false;
 
-    protected override async Task OnInitializedAsync()
+ protected override async Task OnInitializedAsync()
+{
+    try
     {
-        _photos = await PhotoService.GetAllAsync();
+        var photos = await Http.GetFromJsonAsync<List<Photo>>("api/photo/all");
+
+        _photos = photos?.Select(p => new Photo
+        {
+            ID = p.ID,
+            Title = p.Title,
+            Caption = p.Caption,
+            Date = p.Date,
+            FileName = p.FileName,
+            ContentType = p.ContentType,
+            ImageData = p.ImageData, 
+            PreviewData = p.PreviewData, // base64 string already included
+        }).ToList() ?? new List<Photo>();
     }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Error fetching photos: {ex.Message}");
+    }
+
+    loading = false;
+}
+
+    
+    private async Task ShowFullImage(string photoId)
+    {
+        isModalVisible = true;
+        var photo = await PhotoService.GetPhotoByIdAsync(photoId);
+        loadingModal = false;
+        selectedPhoto = photo;
+        fullImageData = photo.ImageSrc;
+    }
+
+    private void CloseModal(KeyboardEventArgs? e)
+    {
+        if (e is null || e.Key == "Escape")
+        {
+            fullImageData = string.Empty;
+            selectedPhoto = null;
+            isModalVisible = false;
+            StateHasChanged();
+        }
+    }   
 }
