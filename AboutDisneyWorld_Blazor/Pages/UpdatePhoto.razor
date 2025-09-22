@@ -1,22 +1,25 @@
-﻿@page "/addphoto"
+@page "/updatephoto/{id}"
 @using SixLabors.ImageSharp
 @using SixLabors.ImageSharp.Processing
 @inject MongoDBPhotoService PhotoService
 @inject IWebHostEnvironment Env
 @inject NavigationManager Navigation
 
-<PageTitle>Add Photo</PageTitle>
+<PageTitle>Update Photo</PageTitle>
 
 <div class="mb-3">
-    <h3>Add Photo</h3>
+    <h3>Update Photo</h3>
 
-    <EditForm Model="@newPhoto" OnValidSubmit="InsertPhoto" FormName="AddPhotoForm">
+    <EditForm Model="@photo" OnValidSubmit="EditPhoto" FormName="UpdatePhotoForm">
         <div class="mb-3 d-flex align-items-center gap-2">
             <label class="form-label btn btn-primary" for="fileselect">Select Photo to Upload</label>
             <InputFile style="display: none" id="fileselect" OnChange="@HandleFileSelected" />
             
-            @if(uploadedFile != null){
-                <p>Selected Photo: @newPhoto.FileName</p>
+            @if(photo.FileName != null){
+                <p>Selected Photo: @photo.FileName</p>
+            }
+            else if(uploadedFile != null){
+                <p>Selected Photo: @uploadedFile.Name</p>
             }
             else{
                 <p>No Photo Selected</p>
@@ -25,12 +28,12 @@
 
         <div class="mb-3">
             <label class="form-label" for="title">Photo Title</label>
-            <InputText @bind-Value="newPhoto.Title" id="title" placeholder="Title" class="form-control" />
+            <InputText @bind-Value="photo.Title" id="title" placeholder="@photo.Title" class="form-control" />
         </div>
 
         <div class="mb-3">
             <label class="form-label" for="caption">Photo Caption</label>
-            <InputText @bind-Value="newPhoto.Caption" id="caption" placeholder="Caption" class="form-control" />
+            <InputText @bind-Value="photo.Caption" id="caption" placeholder="@photo.Caption" class="form-control" />
         </div>
 
         @if (!string.IsNullOrWhiteSpace(previewImageUrl))
@@ -42,8 +45,8 @@
             </div>
         }
         
-        <Button type="submit" class="btn btn-success" Disabled="@isAdding">
-            @if (isAdding)
+        <Button type="submit" class="btn btn-success" Disabled="@isEditing">
+            @if (isEditing)
             {
                 <span class="spinner-border spinner-border-sm me-2" role="status"></span>
                 <span>Loading...</span>
@@ -57,11 +60,23 @@
 </div>
 
 @code {
-    private Photo newPhoto = new();
+    private Photo photo = new();
     private IBrowserFile? uploadedFile;
     private string? previewImageUrl;
-    private bool isAdding = false;
+    bool isEditing = false;
 
+    [Parameter]
+    public string id { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine($"Photo ID from route: {id}");
+        // You can use 'id' to fetch photo details from your service
+
+        photo = await PhotoService.GetPhotoByIdAsync(id);
+        previewImageUrl = photo.ImageSrc;
+    }
+    
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
         Console.WriteLine("HandleFileSelected triggered"); // Confirm trigger
@@ -85,36 +100,36 @@
 
         using var msPreview = new MemoryStream();
         await image.SaveAsJpegAsync(msPreview);
-        newPhoto.PreviewData = msPreview.ToArray();
+        photo.PreviewData = msPreview.ToArray();
 
-        newPhoto.FileName = uploadedFile.Name;
-        newPhoto.ImageData = buffer;
-        newPhoto.ContentType = contentType;
+        photo.FileName = uploadedFile.Name;
+        photo.ImageData = buffer;
+        photo.ContentType = contentType;
 
         StateHasChanged(); // Show preview
     }
 
-    private async Task InsertPhoto()
+    private async Task EditPhoto()
     {
-        isAdding = true;
-        Console.WriteLine($"Title: {newPhoto.Title}");
-        Console.WriteLine($"Name: {newPhoto.FileName}");
+        isEditing = true;
+        Console.WriteLine($"Title: {photo.Title}");
+        Console.WriteLine($"Name: {photo.FileName}");
 
-        if (!string.IsNullOrWhiteSpace(newPhoto.FileName) && !string.IsNullOrWhiteSpace(newPhoto.Title))
+        if (!string.IsNullOrWhiteSpace(photo.FileName) && !string.IsNullOrWhiteSpace(photo.Title))
         {
-            await PhotoService.AddAsync(newPhoto);
-            Console.WriteLine("Photo added to MongoDB");
+            await PhotoService.UpdateAsync(photo);
+            Console.WriteLine("Photo updated in MongoDB");
         }
         else
         {
             Console.WriteLine("Missing file or title");
         }
 
-        newPhoto = new Photo();
+        photo = new Photo();
         uploadedFile = null;
         previewImageUrl = null;
 
         Navigation.NavigateTo("/");
-        isAdding = false;
+        isEditing = false;
     }
 }

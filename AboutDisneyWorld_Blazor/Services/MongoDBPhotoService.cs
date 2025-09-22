@@ -20,9 +20,26 @@ public class MongoDBPhotoService
     public async Task AddAsync(Photo item) =>
         await _photoCollection.InsertOneAsync(item);
 
-    
+    public async Task UpdateAsync(Photo item)
+    {
+        var filter = Builders<Photo>.Filter.Eq(p => p.ID, item.ID);
+
+        var update = Builders<Photo>.Update
+                                    .Set(p => p.Title, item.Title)
+                                    .Set(p => p.Caption, item.Caption)
+                                    .Set(p => p.FileName, item.FileName)
+                                    .Set(p => p.ImageData, item.ImageData)
+                                    .Set(p => p.PreviewData, item.PreviewData)
+                                    .Set(p => p.ContentType, item.ContentType);
+
+        await _photoCollection.UpdateOneAsync(filter, update);
+    }
+
     public async Task<Photo> GetPhotoByIdAsync(string id)
     {
         return await _photoCollection.Find(p => p.ID.Equals(id)).FirstOrDefaultAsync();
-    }   
+    }
+
+    public async Task DeletePhotoByIdAsync(string id) =>
+        await _photoCollection.DeleteOneAsync(p => p.ID.Equals(id));
 }

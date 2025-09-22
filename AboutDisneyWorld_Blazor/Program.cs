@@ -13,6 +13,8 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartBodyLengthLimit = 10485760; // 10 MB
 });
 
+builder.Services.AddBlazorBootstrap();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

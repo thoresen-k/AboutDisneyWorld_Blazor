@@ -1,5 +1,7 @@
 ﻿@page "/"
 @inject MongoDBPhotoService PhotoService
+@using BlazorBootstrap
+@inject NavigationManager Navigation
 
 <PageTitle>Disney World Diary</PageTitle>
 
@@ -14,22 +16,30 @@
         <p> <img src="mickeymouse.png" style="height: 50px;"> Loading photos...</p>
     </div>
 }
+else {
+    <div class="row">
+        @foreach (var photo in _photos)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card" style="padding: 10px;">
+                    <p>Title: @photo.Title </p>
+                    <p>Caption: @photo.Caption </p>
+                    <p>Uploaded Date: @photo.Date</p>
+                    <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; max-width: 275px;" src="@photo.PreviewImageSrc" alt="@photo.Title" />
 
-<div class="row mb-3">
-    @foreach (var photo in _photos)
-    {
-        <div class="col-md-4">
-            <div class="card" style="padding: 10px;">
-                <p>Title: @photo.Title </p>
-                <p>Caption: @photo.Caption </p>
-                <p>Uploaded Date: @photo.Date</p>
-                <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; max-width: 325px;" src="@photo.PreviewImageSrc" alt="@photo.Title" />
+                    <button class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="() => ShowFullImage(photo.ID.ToString())">View Full Image</button>
+                    <NavLink type="button" class="btn btn-primary mx-auto mb-3" style="width: auto;" href=@($"/updatephoto/{photo.ID}")>Update Photo</NavLink>
+                    
+                    <ConfirmDialog @ref="dialog" />
+                    <ConfirmDialog @ref="messageDialog" />
 
-                <button class="btn btn-primary mx-auto" style="width: auto;" @onclick="() => ShowFullImage(photo.ID.ToString())">View Full Image</button>
+                    <Button class="btn btn-primary mx-auto mb-3" Color="ButtonColor.Danger" @onclick="() => ShowConfirmationAsync(photo.ID.ToString())"> Delete</Button>
+
+                </div>
             </div>
-        </div>
-    }
-</div>
+        }
+    </div>
+}
 
 @if (isModalVisible)
 {
@@ -52,6 +62,7 @@
                         <p>Uploaded Date: @selectedPhoto.Date</p>
                         <img src="@fullImageData" class="img-fluid rounded" style="margin: 0 auto"/>
                     </div>
+                    <button type="button" class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="@(() => CloseModal(null))">Close</button>                
                 }
             </div>
         </div>
@@ -60,14 +71,17 @@
 
 @code{
     private List<Photo> _photos = new();
-    private bool loading = true;
-    private bool loadingModal = true;
+    private bool loading = false;
+    private bool loadingModal = false;
     private Photo? selectedPhoto = new();
     private string fullImageData = string.Empty;
     bool isModalVisible = false;
+    private ConfirmDialog dialog = default!;
+    private ConfirmDialog messageDialog = default!;
 
     protected override async Task OnInitializedAsync()
     {
+        loading = true;
         _photos = await PhotoService.GetAllAsync();
         loading = false;
     }
@@ -79,6 +93,55 @@
         loadingModal = false;
         selectedPhoto = photo;
         fullImageData = photo.ImageSrc;
+    }
+
+    /* Maybe turn into a class */
+    private async Task ShowConfirmationAsync(string photoId)
+    {
+        string userResponse = string.Empty;
+        string alertClass = "alert-info";
+        
+        var confirmation = await dialog.ShowAsync(
+            title: $"Are you sure you want to delete the selected photo?",
+            message1: "This will delete the record forever.\nDo you want to proceed?"
+        );
+
+        Console.WriteLine($"Confirmed: {confirmation}");
+
+        // Step 2: Show result in a single-OK popup
+        var options = new ConfirmDialogOptions
+        {
+            YesButtonText = "OK", // Only OK button
+            NoButtonText = null, // Hide the "No" button
+            YesButtonColor = ButtonColor.Primary,
+            AutoFocusYesButton = true
+        };
+
+        if (confirmation)
+        {
+            PhotoService.DeletePhotoByIdAsync(photoId);
+            await messageDialog.ShowAsync(
+                title: "Success",
+                message1: "✅ Item has been deleted successfully.",
+                message2: "Your changes are now permanent.",
+                confirmDialogOptions: options
+            );
+
+            loading = true;
+            StateHasChanged();
+            _photos = await PhotoService.GetAllAsync();
+            loading = false;
+            StateHasChanged();
+        }
+        else
+        {
+            await messageDialog.ShowAsync(
+                title: "Cancelled",
+                message1: "❌ Action was canceled.",
+                message2: "No changes were made.",
+                confirmDialogOptions: options
+            );
+        }
     }
 
     private void CloseModal(KeyboardEventArgs? e)

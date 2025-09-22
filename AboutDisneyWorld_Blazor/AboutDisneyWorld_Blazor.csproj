@@ -9,7 +9,8 @@
 
   <ItemGroup>
     <!-- Blazor Server components package (usually included transitively) -->
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.0" />
+    <PackageReference Include="Blazor.Bootstrap" Version="3.4.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.11" />
 
     <!-- MongoDB Driver - consider upgrading to latest stable -->
     <PackageReference Include="MongoDB.Driver" Version="2.22.1" />
