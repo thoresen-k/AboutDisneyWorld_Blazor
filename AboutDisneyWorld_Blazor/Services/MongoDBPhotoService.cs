@@ -14,8 +14,27 @@ public class MongoDBPhotoService
         _photoCollection = database.GetCollection<Photo>(config["MongoDB:CollectionName"]);
     }
 
-    public async Task<List<Photo>> GetAllAsync() =>
-        await _photoCollection.Find(_ => true).ToListAsync();
+    public async Task<(List<Photo> photos, bool Success)> GetAllAsync()
+    {
+        List<Photo> photos = null;
+        bool success = false;
+
+        try
+        {
+            photos = await _photoCollection.Find(_ => true).ToListAsync();
+            success = true;
+        }
+        catch (MongoException e)
+        {
+            Console.WriteLine($"Mongo Exception: {e.Message}");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Exception: {e.Message}");
+        }
+
+        return (photos, success);
+    }        
 
     public async Task AddAsync(Photo item) =>
         await _photoCollection.InsertOneAsync(item);
@@ -35,9 +54,26 @@ public class MongoDBPhotoService
         await _photoCollection.UpdateOneAsync(filter, update);
     }
 
-    public async Task<Photo> GetPhotoByIdAsync(string id)
+    public async Task<(Photo photo, bool Success)> GetPhotoByIdAsync(string id)
     {
-        return await _photoCollection.Find(p => p.ID.Equals(id)).FirstOrDefaultAsync();
+        Photo photo = null;
+        bool success = false;
+
+        try
+        {
+            photo = await _photoCollection.Find(p => p.ID.Equals(id)).FirstOrDefaultAsync();
+            success = true;
+        }
+        catch (MongoException e)
+        {
+            Console.WriteLine($"Mongo Exception: {e.Message}");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Exception: {e.Message}");
+        }
+
+        return (photo, success);
     }
 
     public async Task DeletePhotoByIdAsync(string id) =>

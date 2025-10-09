@@ -73,8 +73,11 @@
         Console.WriteLine($"Photo ID from route: {id}");
         // You can use 'id' to fetch photo details from your service
 
-        photo = await PhotoService.GetPhotoByIdAsync(id);
-        previewImageUrl = photo.ImageSrc;
+        (Photo fullPhoto, bool success) = await PhotoService.GetPhotoByIdAsync(id);
+        if(success){
+            photo = fullPhoto;
+            previewImageUrl = photo.ImageSrc;
+        }
     }
     
     private async Task HandleFileSelected(InputFileChangeEventArgs e)

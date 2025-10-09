@@ -18,7 +18,7 @@
 }
 else {
     <div class="row">
-        @foreach (var photo in _photos)
+        @foreach (var photo in photos)
         {
             <div class="col-md-4 mb-3">
                 <div class="card" style="padding: 10px;">
@@ -60,7 +60,7 @@ else {
                     <div class="modal-body">
                         <p>Caption: @selectedPhoto.Caption </p>
                         <p>Uploaded Date: @selectedPhoto.Date</p>
-                        <img src="@fullImageData" class="img-fluid rounded" style="margin: 0 auto"/>
+                        <img src="@fullImageData" class="img-fluid rounded" style="display: block; margin: 0 auto"/>
                     </div>
                     <button type="button" class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="@(() => CloseModal(null))">Close</button>                
                 }
@@ -70,7 +70,7 @@ else {
 }
 
 @code{
-    private List<Photo> _photos = new();
+    private List<Photo> photos = new();
     private bool loading = false;
     private bool loadingModal = false;
     private Photo? selectedPhoto = new();
@@ -82,17 +82,24 @@ else {
     protected override async Task OnInitializedAsync()
     {
         loading = true;
-        _photos = await PhotoService.GetAllAsync();
+        (List<Photo> photosList, bool success) = await PhotoService.GetAllAsync();
+        if(success) {
+            photos = photosList;
+        }
         loading = false;
     }
     
     private async Task ShowFullImage(string photoId)
     {
         isModalVisible = true;
-        var photo = await PhotoService.GetPhotoByIdAsync(photoId);
-        loadingModal = false;
-        selectedPhoto = photo;
-        fullImageData = photo.ImageSrc;
+        loadingModal = true;
+        (var photo, bool success) = await PhotoService.GetPhotoByIdAsync(photoId);
+        if(success)
+        {
+            loadingModal = false;
+            selectedPhoto = photo;
+            fullImageData = photo.ImageSrc;
+        }
     }
 
     /* Maybe turn into a class */
@@ -119,7 +126,7 @@ else {
 
         if (confirmation)
         {
-            PhotoService.DeletePhotoByIdAsync(photoId);
+            await PhotoService.DeletePhotoByIdAsync(photoId);
             await messageDialog.ShowAsync(
                 title: "Success",
                 message1: "✅ Item has been deleted successfully.",
@@ -129,7 +136,11 @@ else {
 
             loading = true;
             StateHasChanged();
-            _photos = await PhotoService.GetAllAsync();
+            (List<Photo> photosList, bool success) = await PhotoService.GetAllAsync();
+            if(success)
+            {
+                photos = photosList;
+            }
             loading = false;
             StateHasChanged();
         }
