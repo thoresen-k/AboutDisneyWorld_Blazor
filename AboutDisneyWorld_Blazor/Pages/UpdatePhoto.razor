@@ -1,4 +1,5 @@
 @page "/updatephoto/{id}"
+@using ImageSharp = SixLabors.ImageSharp 
 @using SixLabors.ImageSharp
 @using SixLabors.ImageSharp.Processing
 @inject MongoDBPhotoService PhotoService
@@ -45,7 +46,7 @@
             </div>
         }
         
-        <Button type="submit" class="btn btn-success" Disabled="@isEditing">
+        <Button type="ButtonType.Submit" class="btn btn-success" Disabled="@isEditing">
             @if (isEditing)
             {
                 <span class="spinner-border spinner-border-sm me-2" role="status"></span>
@@ -94,11 +95,11 @@
         previewImageUrl = $"data:{contentType};base64,{base64}";
 
         // Preview Data
-        using var image = Image.Load(buffer);
+        using var image = ImageSharp.Image.Load(buffer);
         image.Mutate(x => x.Resize(new ResizeOptions
         {
             Mode = ResizeMode.Max,
-            Size = new Size(275, 0)
+            Size = new ImageSharp.Size(275, 0)
         }));
 
         using var msPreview = new MemoryStream();

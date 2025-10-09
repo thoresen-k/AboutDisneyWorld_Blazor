@@ -42,7 +42,7 @@
             </div>
         }
         
-        <Button type="submit" class="btn btn-success" Disabled="@isAdding">
+        <Button type="ButtonType.Submit" class="btn btn-success" Disabled="@isAdding">
             @if (isAdding)
             {
                 <span class="spinner-border spinner-border-sm me-2" role="status"></span>
@@ -76,7 +76,7 @@
         previewImageUrl = $"data:{contentType};base64,{base64}";
 
         // Preview Data
-        using var image = Image.Load(buffer);
+        using var image = SixLabors.ImageSharp.Image.Load(buffer);
         image.Mutate(x => x.Resize(new ResizeOptions
         {
             Mode = ResizeMode.Max,

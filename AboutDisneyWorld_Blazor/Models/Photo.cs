@@ -7,7 +7,7 @@ namespace AboutDisneyWorld_Blazor.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string ID { get; set; }
+        public string ID { get; set; } = string.Empty;
 
         public string FileName { get; set; } = string.Empty;
 

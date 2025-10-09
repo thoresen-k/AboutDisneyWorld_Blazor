@@ -16,7 +16,7 @@ public class MongoDBPhotoService
 
     public async Task<(List<Photo> photos, bool Success)> GetAllAsync()
     {
-        List<Photo> photos = null;
+        List<Photo> photos = [];
         bool success = false;
 
         try
@@ -56,7 +56,7 @@ public class MongoDBPhotoService
 
     public async Task<(Photo photo, bool Success)> GetPhotoByIdAsync(string id)
     {
-        Photo photo = null;
+        Photo photo = new();
         bool success = false;
 
         try
