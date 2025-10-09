@@ -16,10 +16,10 @@
             <label class="form-label btn btn-primary" for="fileselect">Select Photo to Upload</label>
             <InputFile style="display: none" id="fileselect" OnChange="@HandleFileSelected" />
             
-            @if(photo.FileName != null){
+            @if(photo.FileName is not null){
                 <p>Selected Photo: @photo.FileName</p>
             }
-            else if(uploadedFile != null){
+            else if(uploadedFile is not null){
                 <p>Selected Photo: @uploadedFile.Name</p>
             }
             else{
