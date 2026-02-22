@@ -1,3 +1,4 @@
+using AboutDisneyWorld_Blazor.Interfaces;
 using AboutDisneyWorld_Blazor.Services;
 using Microsoft.AspNetCore.Http.Features;
 
@@ -14,6 +15,7 @@ builder.Services.Configure<FormOptions>(options =>
 });
 
 builder.Services.AddBlazorBootstrap();
+builder.Services.AddScoped<IPhotoFormService, PhotoFormService>();
 
 var app = builder.Build();
 

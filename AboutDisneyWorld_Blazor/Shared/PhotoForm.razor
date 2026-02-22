@@ -1,0 +1,114 @@
+@using AboutDisneyWorld_Blazor.Interfaces
+@using SixLabors.ImageSharp
+@using SixLabors.ImageSharp.Processing
+@inject IWebHostEnvironment Env
+@inject NavigationManager Navigation
+@inject IPhotoFormService PhotoService
+
+<div class="mb-3">
+    <EditForm Model="@Model" OnValidSubmit="HandleSubmit">
+        <div class="mb-3 d-flex align-items-center gap-2">
+            <label class="form-label btn btn-primary" for="fileselect">Select Photo to Upload</label>
+            <InputFile style="display: none" id="fileselect" OnChange="@HandleFileSelected" />
+            
+            @* if the model already has a file name (edit scenario), show it,
+               otherwise fall back to upload state *@
+            @if (!string.IsNullOrWhiteSpace(Model?.FileName))
+            {
+                <p>Selected Photo: @Model.FileName</p>
+            }
+            else if (uploadedFile is not null)
+            {
+                <p>Selected Photo: @Model!.FileName</p>
+            }
+            else
+            {
+                <p>No Photo Selected</p>
+            }
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="title">Photo Title</label>
+            <InputText @bind-Value="Model!.Title" id="title" placeholder="Title" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="caption">Photo Caption</label>
+            <InputText @bind-Value="Model!.Caption" id="caption" placeholder="Caption" class="form-control" />
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.PreviewImageSrc))
+        {
+            <div class="mb-3">
+                <label class="form-label">Preview</label>
+                <br>
+                <img src="@Model.ImageSrc" alt="Preview" class="img-thumbnail" style="max-width: 300px;" />
+            </div>
+        }
+        
+        <Button type="ButtonType.Submit" class="btn btn-success" Disabled="@IsProcessing">
+            @if (IsProcessing)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                <span>Loading...</span>
+            }
+            else
+            {
+                <span>Save</span>
+            }
+        </Button>
+    </EditForm>
+</div>
+
+@code {
+    [Microsoft.AspNetCore.Components.ParameterAttribute]
+    public Photo Model { get; set; } = new Photo();
+
+    [Microsoft.AspNetCore.Components.ParameterAttribute]
+    public Microsoft.AspNetCore.Components.EventCallback OnValidSubmit { get; set; }
+
+    [Microsoft.AspNetCore.Components.ParameterAttribute]
+    public Microsoft.AspNetCore.Components.EventCallback<InputFileChangeEventArgs> OnChange { get; set; }
+
+    [Microsoft.AspNetCore.Components.ParameterAttribute]
+    public bool IsProcessing { get; set; }
+
+    [Microsoft.AspNetCore.Components.ParameterAttribute]
+    public string FormName { get; set; } = string.Empty;
+
+    private IBrowserFile? uploadedFile;
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        Console.WriteLine("HandleFileSelected Triggered from PhotoForm.razor!!");
+
+        if (e == null || e.FileCount == 0)
+            return;
+
+        uploadedFile = e.File;
+        IsProcessing = true;
+
+        try
+        {
+            var processed = await PhotoService.HandleFileSelected(uploadedFile);
+
+            // update the bound model so parent components see the values
+            Model.FileName = processed.FileName;
+            Model.ContentType = processed.ContentType;
+            Model.ImageData = processed.ImageData;
+            Model.PreviewData = processed.PreviewData;
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+
+        // notify parent if they have wired up the callback
+        await OnChange.InvokeAsync(e);
+    }
+
+    private async Task HandleSubmit () {
+        Console.WriteLine("HandleSubmit Triggerd from PhotoForm.razor!!");
+        await OnValidSubmit.InvokeAsync(null);
+    }
+}

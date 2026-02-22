@@ -11,58 +11,11 @@
 <div class="mb-3">
     <h3>Update Photo</h3>
 
-    <EditForm Model="@photo" OnValidSubmit="EditPhoto" FormName="UpdatePhotoForm">
-        <div class="mb-3 d-flex align-items-center gap-2">
-            <label class="form-label btn btn-primary" for="fileselect">Select Photo to Upload</label>
-            <InputFile style="display: none" id="fileselect" OnChange="@HandleFileSelected" />
-            
-            @if(photo.FileName is not null){
-                <p>Selected Photo: @photo.FileName</p>
-            }
-            else if(uploadedFile is not null){
-                <p>Selected Photo: @uploadedFile.Name</p>
-            }
-            else{
-                <p>No Photo Selected</p>
-            }
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label" for="title">Photo Title</label>
-            <InputText @bind-Value="photo.Title" id="title" placeholder="@photo.Title" class="form-control" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label" for="caption">Photo Caption</label>
-            <InputText @bind-Value="photo.Caption" id="caption" placeholder="@photo.Caption" class="form-control" />
-        </div>
-
-        @if (!string.IsNullOrWhiteSpace(previewImageUrl))
-        {
-            <div class="mb-3">
-                <label class="form-label">Preview</label>
-                <br>
-                <img src="@previewImageUrl" alt="Preview" class="img-thumbnail" style="max-width: 300px;" />
-            </div>
-        }
-        
-        <Button type="ButtonType.Submit" class="btn btn-success" Disabled="@isEditing">
-            @if (isEditing)
-            {
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                <span>Loading...</span>
-            }
-            else
-            {
-                <span>Save</span>
-            }
-        </Button>
-    </EditForm>
+    <PhotoForm Model="@photo" OnValidSubmit="EditPhoto" IsProcessing="@isEditing" FormName="EditPhotoForm" />
 </div>
 
 @code {
     private Photo photo = new();
-    private IBrowserFile? uploadedFile;
     private string? previewImageUrl;
     bool isEditing = false;
 
@@ -80,38 +33,6 @@
             previewImageUrl = photo.ImageSrc;
         }
     }
-    
-    private async Task HandleFileSelected(InputFileChangeEventArgs e)
-    {
-        Console.WriteLine("HandleFileSelected triggered"); // Confirm trigger
-        uploadedFile = e.File;
-
-        // Base64 preview
-        using var ms = new MemoryStream();
-        await uploadedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(ms);
-        var buffer = ms.ToArray();
-        var base64 = Convert.ToBase64String(buffer);
-        var contentType = string.IsNullOrWhiteSpace(uploadedFile.ContentType) ? "image/jpeg" : uploadedFile.ContentType;
-        previewImageUrl = $"data:{contentType};base64,{base64}";
-
-        // Preview Data
-        using var image = ImageSharp.Image.Load(buffer);
-        image.Mutate(x => x.Resize(new ResizeOptions
-        {
-            Mode = ResizeMode.Max,
-            Size = new ImageSharp.Size(275, 0)
-        }));
-
-        using var msPreview = new MemoryStream();
-        await image.SaveAsJpegAsync(msPreview);
-        photo.PreviewData = msPreview.ToArray();
-
-        photo.FileName = uploadedFile.Name;
-        photo.ImageData = buffer;
-        photo.ContentType = contentType;
-
-        StateHasChanged(); // Show preview
-    }
 
     private async Task EditPhoto()
     {
@@ -128,10 +49,6 @@
         {
             Console.WriteLine("Missing file or title");
         }
-
-        photo = new Photo();
-        uploadedFile = null;
-        previewImageUrl = null;
 
         Navigation.NavigateTo("/");
         isEditing = false;
