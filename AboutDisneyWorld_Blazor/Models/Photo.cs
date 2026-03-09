@@ -10,6 +10,7 @@ namespace AboutDisneyWorld_Blazor.Models
         [BsonRepresentation(BsonType.ObjectId)]
         public string ID { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "A file upload is required")]
         public string FileName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Photo title is required")]
