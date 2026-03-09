@@ -25,7 +25,7 @@ else {
                     <p>Title: @photo.Title </p>
                     <p>Caption: @photo.Caption </p>
                     <p>Uploaded Date: @photo.Date</p>
-                    <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; max-width: 275px;" src="@photo.PreviewImageSrc" alt="@photo.Title" />
+                    <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; height: 300px; width: auto" src="@photo.PreviewImageSrc" alt="@photo.Title" />
 
                     <Button class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="() => ShowFullImage(photo.ID.ToString())">View Full Image</Button>
                     <NavLink type="Button" class="btn btn-primary mx-auto mb-3" style="width: auto;" href=@($"/updatephoto/{photo.ID}")>Update Photo</NavLink>
