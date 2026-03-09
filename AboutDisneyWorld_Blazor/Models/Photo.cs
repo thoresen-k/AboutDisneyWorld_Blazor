@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
+using System.ComponentModel.DataAnnotations;
 
 namespace AboutDisneyWorld_Blazor.Models
 {
@@ -11,6 +12,7 @@ namespace AboutDisneyWorld_Blazor.Models
 
         public string FileName { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Photo title is required")]
         public string Title { get; set; } = string.Empty;
 
         public string Caption { get; set; } = string.Empty;

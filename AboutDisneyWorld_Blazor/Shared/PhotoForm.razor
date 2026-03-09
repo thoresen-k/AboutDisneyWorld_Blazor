@@ -7,6 +7,9 @@
 
 <div class="mb-3">
     <EditForm Model="@Model" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
         <div class="mb-3 d-flex align-items-center gap-2">
             <label class="form-label btn btn-primary" for="fileselect">Select Photo to Upload</label>
             <InputFile style="display: none" id="fileselect" OnChange="@HandleFileSelected" />
@@ -30,6 +33,7 @@
         <div class="mb-3">
             <label class="form-label" for="title">Photo Title</label>
             <InputText @bind-Value="Model!.Title" id="title" placeholder="Title" class="form-control" />
+            <ValidationMessage For="@(() => Model.Title)" />
         </div>
 
         <div class="mb-3">
@@ -37,7 +41,7 @@
             <InputText @bind-Value="Model!.Caption" id="caption" placeholder="Caption" class="form-control" />
         </div>
 
-        @if (!string.IsNullOrWhiteSpace(Model.PreviewImageSrc))
+        @if (Model.ImageData?.Length > 0)
         {
             <div class="mb-3">
                 <label class="form-label">Preview</label>
