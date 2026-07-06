@@ -1,3 +1,4 @@
+using AboutDisneyWorld_Blazor.Interfaces;
 using AboutDisneyWorld_Blazor.Services;
 using Microsoft.AspNetCore.Http.Features;
 
@@ -12,6 +13,9 @@ builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 10485760; // 10 MB
 });
+
+builder.Services.AddBlazorBootstrap();
+builder.Services.AddScoped<IPhotoFormService, PhotoFormService>();
 
 var app = builder.Build();
 
