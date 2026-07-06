@@ -91,6 +91,7 @@ else {
     
     private async Task ShowFullImage(string photoId)
     {
+        loadingModal = true;
         isModalVisible = true;
         loadingModal = true;
         (var photo, bool success) = await PhotoService.GetPhotoByIdAsync(photoId);
