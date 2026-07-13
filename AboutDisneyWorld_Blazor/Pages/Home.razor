@@ -174,7 +174,7 @@ else {
 
     private async Task LoadBucketsAsync()
     {
-        var buckets = await CloudflareR2Service.ListBucketsAsync();
+        var buckets = await CloudflareR2Service.ListObjectsAsync();
         bucketNames = buckets.Any() ? string.Join(", ", buckets) : "No buckets found.";
     }
 }

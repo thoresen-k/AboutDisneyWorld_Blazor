@@ -20,7 +20,13 @@ public class CloudflareR2Service
 
     public async Task<List<string>> ListBucketsAsync()
     {
+        var response = await s3Client.ListBucketsAsync();
+        return response.Buckets.Select(b => b.BucketName).ToList();
+    }
+
+    public async Task<List<string>> ListObjectsAsync()
+    {
         var response = await s3Client.ListObjectsAsync("disneyphotos");
-        return response.S3Objects.Select(b => b.BucketName).ToList();
+        return response.S3Objects.Select(o => o.Key).ToList();
     }
 }
