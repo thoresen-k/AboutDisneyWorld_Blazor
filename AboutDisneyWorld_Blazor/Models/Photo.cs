@@ -24,7 +24,7 @@ namespace AboutDisneyWorld_Blazor.Models
         
         public string ContentType { get; set; } = string.Empty;
         
-        public string ImageSrc => $"data:{ContentType};base64,{Convert.ToBase64String(ImageData)}";
+        public string ImageSrc { get; set; } = string.Empty;
 
         public string PreviewImageSrc => $"data:{ContentType};base64,{Convert.ToBase64String(PreviewData)}";
 

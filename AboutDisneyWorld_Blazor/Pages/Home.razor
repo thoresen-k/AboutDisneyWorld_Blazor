@@ -9,8 +9,6 @@
 <h1>@Constants.MainWindowHeader</h1>
 <p>@Constants.MainWindowTagline</p>
 
-<p>@bucketNames</p>
-
 
 <NavLink class="btn btn-primary mb-3" href="/addphoto">+ Add Photo</NavLink>
 
@@ -29,7 +27,7 @@ else {
                     <p>Title: @photo.Title </p>
                     <p>Caption: @photo.Caption </p>
                     <p>Uploaded Date: @photo.Date</p>
-                    <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; height: 300px; width: auto" src="@photo.PreviewImageSrc" alt="@photo.Title" />
+                    <img class="card-img-top mb-3" loading="lazy" decoding="async" fetchpriority="low" style="margin: 0 auto; max-width: 200px" src="@photo.ImageSrc" alt="@photo.Title" />
 
                     <Button class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="() => ShowFullImage(photo.ID.ToString())">View Full Image</Button>
                     <NavLink type="Button" class="btn btn-primary mx-auto mb-3" style="width: auto;" href=@($"/updatephoto/{photo.ID}")>Update Photo</NavLink>
@@ -59,14 +57,14 @@ else {
                 else{
                     <div class="modal-header">
                         <h5 class="modal-title">Full Image: @selectedPhoto.Title</h5>
-                        <Button class="btn-close" @onclick="@(() => CloseModal(null))"></Button>
+                        <Button class="btn-close" @onclick="@(() => CloseModal())"></Button>
                     </div>
                     <div class="modal-body">
                         <p>Caption: @selectedPhoto.Caption </p>
                         <p>Uploaded Date: @selectedPhoto.Date</p>
                         <img src="@fullImageData" class="img-fluid rounded" style="display: block; margin: 0 auto"/>
                     </div>
-                    <Button class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="@(() => CloseModal(null))">Close</Button>                
+                    <Button class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="@(() => CloseModal())">Close</Button>                
                 }
             </div>
         </div>
@@ -78,7 +76,7 @@ else {
     private bool loading = false;
     private bool loadingModal = false;
     private Photo? selectedPhoto = null;
-    private string bucketNames = string.Empty;
+    private List<string> objectNames = new();
     private string fullImageData = string.Empty;
     bool isModalVisible = false;
     private ConfirmDialog dialog = default!;
@@ -92,7 +90,6 @@ else {
             photos = photosList;
         }
 
-        await LoadBucketsAsync();
         loading = false;
     }
     
@@ -161,20 +158,11 @@ else {
         }
     }
 
-    private void CloseModal(KeyboardEventArgs? e)
+    private void CloseModal()
     {
-        if (e is null || e.Key == "Escape")
-        {
-            fullImageData = string.Empty;
-            selectedPhoto = null;
-            isModalVisible = false;
-            StateHasChanged();
-        }
-    }   
-
-    private async Task LoadBucketsAsync()
-    {
-        var buckets = await CloudflareR2Service.ListObjectsAsync();
-        bucketNames = buckets.Any() ? string.Join(", ", buckets) : "No buckets found.";
+        fullImageData = string.Empty;
+        selectedPhoto = null;
+        isModalVisible = false;
+        StateHasChanged();
     }
 }

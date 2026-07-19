@@ -21,7 +21,16 @@ public class MongoDBPhotoService
 
         try
         {
-            photos = await _photoCollection.Find(_ => true).ToListAsync();
+            var projection = Builders<Photo>.Projection
+                .Exclude(p => p.ImageData)
+                .Exclude(p => p.PreviewData);
+
+            photos = await _photoCollection
+                .Find(_ => true)
+                .SortBy(p => p.Date)
+                .Project<Photo>(projection)
+                .ToListAsync();
+
             success = true;
         }
         catch (MongoException e)
@@ -34,7 +43,7 @@ public class MongoDBPhotoService
         }
 
         return (photos, success);
-    }        
+    }
 
     public async Task AddAsync(Photo item) =>
         await _photoCollection.InsertOneAsync(item);
@@ -61,7 +70,15 @@ public class MongoDBPhotoService
 
         try
         {
-            photo = await _photoCollection.Find(p => p.ID.Equals(id)).FirstOrDefaultAsync();
+            var projection = Builders<Photo>.Projection
+                .Exclude(p => p.ImageData)
+                .Exclude(p => p.PreviewData);
+
+            photo = await _photoCollection
+                .Find(p => p.ID.Equals(id))
+                .Project<Photo>(projection)
+                .FirstOrDefaultAsync();
+
             success = true;
         }
         catch (MongoException e)
