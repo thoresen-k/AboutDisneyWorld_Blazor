@@ -39,18 +39,28 @@
             <InputText @bind-Value="Model!.Caption" id="caption" placeholder="Caption" class="form-control" />
         </div>
 
-        @if (Model.PreviewImageSrc.Length > 0)
+        @if (!string.IsNullOrWhiteSpace(PhotoService.PreviewImageUrl))
         {
             <div class="mb-3">
                 <label class="form-label">Preview</label>
                 <br>
-                <img src="@Model.PreviewImageSrc" alt="Preview" class="img-thumbnail" style="max-width: 300px;" />
+                <img src="@PhotoService.PreviewImageUrl" alt="Preview" class="img-thumbnail" style="max-width: 300px;" />
             </div>
-        } else {
-                <div class="mb-3">
+        }
+        else if (!string.IsNullOrWhiteSpace(Model.ImageSrc))
+        {
+            <div class="mb-3">
                 <label class="form-label">Preview</label>
                 <br>
-                <img src="@PhotoService.PreviewImageUrl" alt="Preview" class="img-thumbnail" style="max-width: 300px;" />
+                <img src="@Model.ImageSrc" alt="Preview" class="img-thumbnail" style="max-width: 300px;" />
+            </div>
+        }
+        else
+        {
+            <div class="mb-3">
+                <label class="form-label">Preview</label>
+                <br>
+                <p class="text-muted">No preview available yet.</p>
             </div>
         }
         
