@@ -3,6 +3,7 @@
 @using SixLabors.ImageSharp
 @using SixLabors.ImageSharp.Processing
 @inject MongoDBPhotoService PhotoService
+@inject CloudflareR2Service CloudflareR2Service
 @inject IWebHostEnvironment Env
 @inject NavigationManager Navigation
 
@@ -16,6 +17,7 @@
 
 @code {
     private Photo photo = new();
+    private Photo origPhoto = new();
     private string? previewImageUrl;
     bool isEditing = false;
 
@@ -29,10 +31,24 @@
 
         (Photo fullPhoto, bool success) = await PhotoService.GetPhotoByIdAsync(id);
         if(success){
-            photo = fullPhoto;
+            photo = ClonePhoto(fullPhoto);
+            origPhoto = ClonePhoto(fullPhoto);
             previewImageUrl = photo.ImageSrc;
         }
     }
+
+    private static Photo ClonePhoto(Photo source) => new()
+    {
+        ID = source.ID,
+        FileName = source.FileName,
+        Title = source.Title,
+        Caption = source.Caption,
+        ImageData = source.ImageData,
+        PreviewData = source.PreviewData,
+        ContentType = source.ContentType,
+        ImageSrc = source.ImageSrc,
+        Date = source.Date
+    };
 
     private async Task EditPhoto()
     {
@@ -42,6 +58,12 @@
 
         if (!string.IsNullOrWhiteSpace(photo.FileName) && !string.IsNullOrWhiteSpace(photo.Title))
         {
+            if (!string.IsNullOrWhiteSpace(origPhoto.FileName) && !string.Equals(origPhoto.FileName, photo.FileName, StringComparison.OrdinalIgnoreCase))
+            {
+                await CloudflareR2Service.DeleteObject(origPhoto);
+            }
+
+            await CloudflareR2Service.PutObject(photo);
             await PhotoService.UpdateAsync(photo);
             Console.WriteLine("Photo updated in MongoDB");
         }

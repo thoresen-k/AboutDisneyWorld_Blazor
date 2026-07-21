@@ -58,7 +58,8 @@ public class MongoDBPhotoService
                                     .Set(p => p.FileName, item.FileName)
                                     .Set(p => p.ImageData, item.ImageData)
                                     .Set(p => p.PreviewData, item.PreviewData)
-                                    .Set(p => p.ContentType, item.ContentType);
+                                    .Set(p => p.ContentType, item.ContentType)
+                                    .Set(p => p.ImageSrc, item.ImageSrc);
 
         await _photoCollection.UpdateOneAsync(filter, update);
     }

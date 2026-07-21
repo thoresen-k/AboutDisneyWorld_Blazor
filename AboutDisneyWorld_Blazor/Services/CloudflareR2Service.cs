@@ -53,6 +53,6 @@ public class CloudflareR2Service
         };
 
         var response = await s3Client.DeleteObjectAsync(request);
-        Console.WriteLine($"Successfully sent delete request. HTTP Status: {response.HttpStatusCode}");
+        Console.WriteLine($"[CloudflareR2] Delete request sent for key '{photo.FileName}'. HTTP Status: {response.HttpStatusCode}");
     }
 }
