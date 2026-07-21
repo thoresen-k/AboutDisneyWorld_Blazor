@@ -61,9 +61,12 @@
             if (!string.IsNullOrWhiteSpace(origPhoto.FileName) && !string.Equals(origPhoto.FileName, photo.FileName, StringComparison.OrdinalIgnoreCase))
             {
                 await CloudflareR2Service.DeleteObject(origPhoto);
+                Console.WriteLine(value: $"Deleted original photo from Cloudflare: {origPhoto.FileName}");
+
+                await CloudflareR2Service.PutObject(photo);
+                Console.WriteLine(value: $"Uploaded new photo to Cloudflare: {origPhoto.FileName}");
             }
 
-            await CloudflareR2Service.PutObject(photo);
             await PhotoService.UpdateAsync(photo);
             Console.WriteLine("Photo updated in MongoDB");
         }
