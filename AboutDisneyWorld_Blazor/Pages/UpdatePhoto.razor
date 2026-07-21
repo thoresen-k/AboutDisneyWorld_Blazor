@@ -64,7 +64,7 @@
                 Console.WriteLine(value: $"Deleted original photo from Cloudflare: {origPhoto.FileName}");
 
                 await CloudflareR2Service.PutObject(photo);
-                Console.WriteLine(value: $"Uploaded new photo to Cloudflare: {origPhoto.FileName}");
+                Console.WriteLine(value: $"Uploaded new photo to Cloudflare: {photo.FileName}");
             }
 
             await PhotoService.UpdateAsync(photo);
