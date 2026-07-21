@@ -21,14 +21,9 @@ public class MongoDBPhotoService
 
         try
         {
-            var projection = Builders<Photo>.Projection
-                .Exclude(p => p.ImageData)
-                .Exclude(p => p.PreviewData);
-
             photos = await _photoCollection
                 .Find(_ => true)
                 .SortBy(p => p.Date)
-                .Project<Photo>(projection)
                 .ToListAsync();
 
             success = true;
@@ -56,9 +51,6 @@ public class MongoDBPhotoService
                                     .Set(p => p.Title, item.Title)
                                     .Set(p => p.Caption, item.Caption)
                                     .Set(p => p.FileName, item.FileName)
-                                    .Set(p => p.ImageData, item.ImageData)
-                                    .Set(p => p.PreviewData, item.PreviewData)
-                                    .Set(p => p.ContentType, item.ContentType)
                                     .Set(p => p.ImageSrc, item.ImageSrc);
 
         await _photoCollection.UpdateOneAsync(filter, update);
@@ -71,13 +63,8 @@ public class MongoDBPhotoService
 
         try
         {
-            var projection = Builders<Photo>.Projection
-                .Exclude(p => p.ImageData)
-                .Exclude(p => p.PreviewData);
-
             photo = await _photoCollection
                 .Find(p => p.ID.Equals(id))
-                .Project<Photo>(projection)
                 .FirstOrDefaultAsync();
 
             success = true;

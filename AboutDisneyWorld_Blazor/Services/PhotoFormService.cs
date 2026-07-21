@@ -28,9 +28,6 @@ public class PhotoFormService : IPhotoFormService
         PreviewImageUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(data)}";
 
         return new Photo{
-            ImageData = data,
-            PreviewData = data,
-            ContentType = !string.IsNullOrWhiteSpace(file.ContentType) ? file.ContentType : "image/jpeg",
             FileName = file.Name,
             ImageSrc = $"https://thoresen-disneyphotos.com/{file.Name}",
         };

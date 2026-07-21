@@ -2,6 +2,7 @@ using AboutDisneyWorld_Blazor.Models;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Microsoft.AspNetCore.Components.Forms;
 using MongoDB.Driver.Core.Operations;
 namespace AboutDisneyWorld_Blazor.Services;
 public class CloudflareR2Service
@@ -21,19 +22,22 @@ public class CloudflareR2Service
         });
     }
 
-    public async Task PutObject(Photo photo)
+    public async Task PutObject(IBrowserFile file)
     {
         // Convert your content or data into a stream
-        var byteArray = photo.ImageData;
-        using var memoryStream = new MemoryStream(byteArray);
+        using var stream = file.OpenReadStream(file.Size);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        var data = ms.ToArray();
+        using var memoryStream = new MemoryStream(data);
 
         memoryStream.Position = 0;
 
         var request = new PutObjectRequest
         {
             BucketName = bucketName,
-            Key = photo.FileName,
-            ContentType = photo.ContentType,
+            Key = file.Name,
+            ContentType = file.ContentType,
             InputStream = memoryStream,
             DisablePayloadSigning = true,
             DisableDefaultChecksumValidation = true

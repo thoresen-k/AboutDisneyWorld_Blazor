@@ -1,5 +1,6 @@
 @page "/updatephoto/{id}"
 @using ImageSharp = SixLabors.ImageSharp 
+@using MongoDB.Bson
 @using SixLabors.ImageSharp
 @using SixLabors.ImageSharp.Processing
 @inject MongoDBPhotoService PhotoService
@@ -12,12 +13,13 @@
 <div class="mb-3">
     <h3>Update Photo</h3>
 
-    <PhotoForm Model="@photo" OnValidSubmit="EditPhoto" IsProcessing="@isEditing" FormName="EditPhotoForm" />
+    <PhotoForm Model="@photo" OnValidSubmit="EditPhoto" OnChange="HandleFileSelected" IsProcessing="@isEditing" FormName="EditPhotoForm" />
 </div>
 
 @code {
     private Photo photo = new();
     private Photo origPhoto = new();
+    private IBrowserFile? file;
     private string? previewImageUrl;
     bool isEditing = false;
 
@@ -36,6 +38,14 @@
             previewImageUrl = photo.ImageSrc;
         }
     }
+    private Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        // the form component already updated the `newPhoto` model,
+        // so just log or perform any additional bookkeeping here.
+        file = e.File;
+        Console.WriteLine($"PhotoForm raised OnChange, current file: {photo.FileName}");
+        return Task.CompletedTask;
+    }
 
     private static Photo ClonePhoto(Photo source) => new()
     {
@@ -43,9 +53,6 @@
         FileName = source.FileName,
         Title = source.Title,
         Caption = source.Caption,
-        ImageData = source.ImageData,
-        PreviewData = source.PreviewData,
-        ContentType = source.ContentType,
         ImageSrc = source.ImageSrc,
         Date = source.Date
     };
@@ -63,7 +70,10 @@
                 await CloudflareR2Service.DeleteObject(origPhoto);
                 Console.WriteLine(value: $"Deleted original photo from Cloudflare: {origPhoto.FileName}");
 
-                await CloudflareR2Service.PutObject(photo);
+                if(file is not null)
+                {
+                    await CloudflareR2Service.PutObject(file);
+                } 
                 Console.WriteLine(value: $"Uploaded new photo to Cloudflare: {photo.FileName}");
             }
 

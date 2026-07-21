@@ -1,11 +1,11 @@
 ﻿@page "/addphoto"
+@using MongoDB.Bson
 @using SixLabors.ImageSharp
 @using SixLabors.ImageSharp.Processing
 @inject MongoDBPhotoService PhotoService
 @inject CloudflareR2Service CloudflareR2Service
 @inject IWebHostEnvironment Env
 @inject NavigationManager Navigation
-@* @inject IPhotoFormService AddPhotoFormService not needed anymore *@
 
 <PageTitle>Add Photo</PageTitle>
 
@@ -17,12 +17,14 @@
 
 @code {
     private Photo newPhoto = new();
+    private IBrowserFile? file;
     private bool isAdding;
 
     private Task HandleFileSelected(InputFileChangeEventArgs e)
     {
         // the form component already updated the `newPhoto` model,
         // so just log or perform any additional bookkeeping here.
+        file = e.File;
         Console.WriteLine($"PhotoForm raised OnChange, current file: {newPhoto.FileName}");
         return Task.CompletedTask;
     }
@@ -38,7 +40,11 @@
             await PhotoService.AddAsync(newPhoto);
             Console.WriteLine("Photo added to MongoDB");
             
-            await CloudflareR2Service.PutObject(newPhoto);
+            if(file is not null)
+            {
+                await CloudflareR2Service.PutObject(file);
+            }
+
             Console.WriteLine("Photo added to Cloudflare");            
         }
         else

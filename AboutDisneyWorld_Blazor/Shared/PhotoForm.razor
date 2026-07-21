@@ -1,3 +1,4 @@
+@using System.Diagnostics
 @using AboutDisneyWorld_Blazor.Interfaces
 @inject IWebHostEnvironment Env
 @inject NavigationManager Navigation
@@ -101,7 +102,11 @@
         Console.WriteLine("HandleFileSelected Triggered from PhotoForm.razor!!");
 
         if (e == null || e.FileCount == 0)
+        {
+            PhotoService.PreviewImageUrl = null;
+            uploadedFile = null;
             return;
+        }
 
         uploadedFile = e.File;
         IsProcessing = true;
@@ -111,10 +116,12 @@
             var processed = await PhotoService.HandleFileSelected(uploadedFile);
 
             // update the bound model so parent components see the values
+            var previousTitle = Model.Title;
+            var previousCaption = Model.Caption;
+
             Model.FileName = processed.FileName;
-            Model.ContentType = processed.ContentType;
-            Model.ImageData = processed.ImageData;
-            Model.PreviewData = processed.PreviewData;
+            Model.Title = string.IsNullOrWhiteSpace(processed.Title) ? previousTitle : processed.Title;
+            Model.Caption = string.IsNullOrWhiteSpace(processed.Caption) ? previousCaption : processed.Caption;
             Model.ImageSrc = processed.ImageSrc;
         }
         finally
@@ -129,5 +136,7 @@
     private async Task HandleSubmit () {
         Console.WriteLine("HandleSubmit Triggerd from PhotoForm.razor!!");
         await OnValidSubmit.InvokeAsync(null);
+        PhotoService.PreviewImageUrl = null;
+        uploadedFile = null;
     }
 }
