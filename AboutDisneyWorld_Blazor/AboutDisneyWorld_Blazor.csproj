@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <!-- Blazor Server components package (usually included transitively) -->
-    <PackageReference Include="AWSSDK.S3" Version="4.0.100.3" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.101.3" />
     <PackageReference Include="Blazor.Bootstrap" Version="3.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Forms" Version="8.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.11" />

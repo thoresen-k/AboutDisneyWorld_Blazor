@@ -1,19 +1,13 @@
 using AboutDisneyWorld_Blazor.Interfaces;
 using AboutDisneyWorld_Blazor.Models;
 using Microsoft.AspNetCore.Components.Forms;
-using System;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace AboutDisneyWorld_Blazor.Services;
 
 public class PhotoFormService : IPhotoFormService
 {
-    private readonly MongoDBPhotoService _mongo;
-
-    public PhotoFormService(MongoDBPhotoService mongo)
+    public PhotoFormService()
     {
-        _mongo = mongo;
     }
 
     // Form state

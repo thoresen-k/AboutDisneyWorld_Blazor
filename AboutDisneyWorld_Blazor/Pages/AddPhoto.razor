@@ -2,6 +2,7 @@
 @using SixLabors.ImageSharp
 @using SixLabors.ImageSharp.Processing
 @inject MongoDBPhotoService PhotoService
+@inject CloudflareR2Service CloudflareR2Service
 @inject IWebHostEnvironment Env
 @inject NavigationManager Navigation
 @* @inject IPhotoFormService AddPhotoFormService not needed anymore *@
@@ -36,6 +37,9 @@
         {
             await PhotoService.AddAsync(newPhoto);
             Console.WriteLine("Photo added to MongoDB");
+            
+            await CloudflareR2Service.PutObject(newPhoto);
+            Console.WriteLine("Photo added to Cloudflare");            
         }
         else
         {
