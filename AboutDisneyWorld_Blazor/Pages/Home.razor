@@ -35,7 +35,7 @@ else {
                     <ConfirmDialog @ref="dialog" />
                     <ConfirmDialog @ref="messageDialog" />
 
-                    <Button class="btn btn-primary mx-auto mb-3" color="ButtonColor.Danger" @onclick="() => ShowConfirmationAsync(photo.ID.ToString())"> Delete</Button>
+                    <Button class="btn btn-primary mx-auto mb-3" color="ButtonColor.Danger" @onclick="() => ShowConfirmationAsync(photo)"> Delete</Button>
 
                 </div>
             </div>
@@ -108,7 +108,7 @@ else {
     }
 
     /* Maybe turn into a class */
-    private async Task ShowConfirmationAsync(string photoId)
+    private async Task ShowConfirmationAsync(Photo photo)
     {
         string userResponse = string.Empty;
         
@@ -130,7 +130,8 @@ else {
 
         if (confirmation)
         {
-            await PhotoService.DeletePhotoByIdAsync(photoId);
+            await PhotoService.DeletePhotoByIdAsync(photo.ID);
+            await CloudflareR2Service.DeleteObject(photo);
             await messageDialog.ShowAsync(
                 title: "Success",
                 message1: "✅ Item has been deleted successfully.",

@@ -2,6 +2,7 @@ using AboutDisneyWorld_Blazor.Models;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
+using MongoDB.Driver.Core.Operations;
 namespace AboutDisneyWorld_Blazor.Services;
 public class CloudflareR2Service
 {
@@ -41,5 +42,17 @@ public class CloudflareR2Service
         var response = await s3Client.PutObjectAsync(request);
 
         Console.WriteLine("ETag: {0}", response.ETag);
+    }
+
+    public async Task DeleteObject(Photo photo)
+    {
+        var request = new DeleteObjectRequest
+        {
+            BucketName = bucketName,
+            Key = photo.FileName
+        };
+
+        var response = await s3Client.DeleteObjectAsync(request);
+        Console.WriteLine($"Successfully sent delete request. HTTP Status: {response.HttpStatusCode}");
     }
 }
