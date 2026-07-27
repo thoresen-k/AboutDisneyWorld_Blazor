@@ -1,10 +1,10 @@
+using AboutDisneyWorld_Blazor;
 using AboutDisneyWorld_Blazor.Interfaces;
 using AboutDisneyWorld_Blazor.Services;
 using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorPages(); // ✅ Required for _Host.cshtml
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
@@ -27,11 +27,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UseRouting(); // ✅ Needed before MapBlazorHub and MapFallbackToPage
 app.UseAntiforgery();
 
-app.MapRazorPages();         // ✅ Required to support _Host.cshtml
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
 
 app.Run();
