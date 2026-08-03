@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inject MongoDBPhotoService PhotoService
+@inject CloudflareR2Service CloudflareR2Service
 @using BlazorBootstrap
 @inject NavigationManager Navigation
 
@@ -7,6 +8,7 @@
 
 <h1>@Constants.MainWindowHeader</h1>
 <p>@Constants.MainWindowTagline</p>
+
 
 <NavLink class="btn btn-primary mb-3" href="/addphoto">+ Add Photo</NavLink>
 
@@ -25,7 +27,7 @@ else {
                     <p>Title: @photo.Title </p>
                     <p>Caption: @photo.Caption </p>
                     <p>Uploaded Date: @photo.Date</p>
-                    <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; height: 300px; width: auto" src="@photo.PreviewImageSrc" alt="@photo.Title" />
+                    <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; max-width: 300px" src="@photo.ImageSrc" alt="@photo.Title" />
 
                     <Button class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="() => ShowFullImage(photo.ID.ToString())">View Full Image</Button>
                     <NavLink type="Button" class="btn btn-primary mx-auto mb-3" style="width: auto;" href=@($"/updatephoto/{photo.ID}")>Update Photo</NavLink>
@@ -33,7 +35,7 @@ else {
                     <ConfirmDialog @ref="dialog" />
                     <ConfirmDialog @ref="messageDialog" />
 
-                    <Button class="btn btn-primary mx-auto mb-3" color="ButtonColor.Danger" @onclick="() => ShowConfirmationAsync(photo.ID.ToString())"> Delete</Button>
+                    <Button class="btn btn-primary mx-auto mb-3" color="ButtonColor.Danger" @onclick="() => ShowConfirmationAsync(photo)"> Delete</Button>
 
                 </div>
             </div>
@@ -43,7 +45,7 @@ else {
 
 @if (isModalVisible)
 {
-    <div class="modal fade show d-block" tabindex="-1" @onkeydown="CloseModal" style="background-color: rgba(0,0,0,0.5);" role="dialog">
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 @if(loadingModal || selectedPhoto is null)
@@ -55,14 +57,14 @@ else {
                 else{
                     <div class="modal-header">
                         <h5 class="modal-title">Full Image: @selectedPhoto.Title</h5>
-                        <Button class="btn-close" @onclick="@(() => CloseModal(null))"></Button>
+                        <Button class="btn-close" @onclick="@(() => CloseModal())"></Button>
                     </div>
                     <div class="modal-body">
                         <p>Caption: @selectedPhoto.Caption </p>
                         <p>Uploaded Date: @selectedPhoto.Date</p>
                         <img src="@fullImageData" class="img-fluid rounded" style="display: block; margin: 0 auto"/>
                     </div>
-                    <Button class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="@(() => CloseModal(null))">Close</Button>                
+                    <Button class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="@(() => CloseModal())">Close</Button>                
                 }
             </div>
         </div>
@@ -74,6 +76,7 @@ else {
     private bool loading = false;
     private bool loadingModal = false;
     private Photo? selectedPhoto = null;
+    private List<string> objectNames = new();
     private string fullImageData = string.Empty;
     bool isModalVisible = false;
     private ConfirmDialog dialog = default!;
@@ -86,6 +89,7 @@ else {
         if(success) {
             photos = photosList;
         }
+
         loading = false;
     }
     
@@ -104,7 +108,7 @@ else {
     }
 
     /* Maybe turn into a class */
-    private async Task ShowConfirmationAsync(string photoId)
+    private async Task ShowConfirmationAsync(Photo photo)
     {
         string userResponse = string.Empty;
         
@@ -126,7 +130,8 @@ else {
 
         if (confirmation)
         {
-            await PhotoService.DeletePhotoByIdAsync(photoId);
+            await PhotoService.DeletePhotoByIdAsync(photo.ID);
+            await CloudflareR2Service.DeleteObject(photo);
             await messageDialog.ShowAsync(
                 title: "Success",
                 message1: "✅ Item has been deleted successfully.",
@@ -154,14 +159,11 @@ else {
         }
     }
 
-    private void CloseModal(KeyboardEventArgs? e)
+    private void CloseModal()
     {
-        if (e is null || e.Key == "Escape")
-        {
-            fullImageData = string.Empty;
-            selectedPhoto = null;
-            isModalVisible = false;
-            StateHasChanged();
-        }
-    }   
+        fullImageData = string.Empty;
+        selectedPhoto = null;
+        isModalVisible = false;
+        StateHasChanged();
+    }
 }

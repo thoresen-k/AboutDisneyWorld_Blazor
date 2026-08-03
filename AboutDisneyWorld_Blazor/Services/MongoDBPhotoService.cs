@@ -21,7 +21,11 @@ public class MongoDBPhotoService
 
         try
         {
-            photos = await _photoCollection.Find(_ => true).ToListAsync();
+            photos = await _photoCollection
+                .Find(_ => true)
+                .SortBy(p => p.Date)
+                .ToListAsync();
+
             success = true;
         }
         catch (MongoException e)
@@ -34,7 +38,7 @@ public class MongoDBPhotoService
         }
 
         return (photos, success);
-    }        
+    }
 
     public async Task AddAsync(Photo item) =>
         await _photoCollection.InsertOneAsync(item);
@@ -47,9 +51,7 @@ public class MongoDBPhotoService
                                     .Set(p => p.Title, item.Title)
                                     .Set(p => p.Caption, item.Caption)
                                     .Set(p => p.FileName, item.FileName)
-                                    .Set(p => p.ImageData, item.ImageData)
-                                    .Set(p => p.PreviewData, item.PreviewData)
-                                    .Set(p => p.ContentType, item.ContentType);
+                                    .Set(p => p.ImageSrc, item.ImageSrc);
 
         await _photoCollection.UpdateOneAsync(filter, update);
     }
@@ -61,7 +63,10 @@ public class MongoDBPhotoService
 
         try
         {
-            photo = await _photoCollection.Find(p => p.ID.Equals(id)).FirstOrDefaultAsync();
+            photo = await _photoCollection
+                .Find(p => p.ID.Equals(id))
+                .FirstOrDefaultAsync();
+
             success = true;
         }
         catch (MongoException e)

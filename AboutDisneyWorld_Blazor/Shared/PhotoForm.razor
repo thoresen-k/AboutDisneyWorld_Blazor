@@ -1,33 +1,34 @@
+@using System.Diagnostics
 @using AboutDisneyWorld_Blazor.Interfaces
-@using SixLabors.ImageSharp
-@using SixLabors.ImageSharp.Processing
 @inject IWebHostEnvironment Env
 @inject NavigationManager Navigation
 @inject IPhotoFormService PhotoService
 
 <div class="mb-3">
-    <EditForm Model="@Model" OnValidSubmit="HandleSubmit">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
+    <EditForm EditContext="@CurrentEditContext" OnValidSubmit="HandleSubmit">
+        <div class="fileselect-group mb-3">
+            <div class="d-flex align-items-center gap-2 @CurrentEditContext?.FieldCssClass(() => Model!.FileName)">
+                <label class="form-label btn btn-primary mb-0" for="fileselect">Select Photo to Upload
+                    <InputFile style="display: none" id="fileselect" OnChange="@HandleFileSelected" />
+                </label>
 
-        <div class="mb-3 d-flex align-items-center gap-2">
-            <label class="form-label btn btn-primary" for="fileselect">Select Photo to Upload</label>
-            <InputFile style="display: none" id="fileselect" OnChange="@HandleFileSelected" />
-            
-            @* if the model already has a file name (edit scenario), show it,
-               otherwise fall back to upload state *@
-            @if (!string.IsNullOrWhiteSpace(Model?.FileName))
-            {
-                <p>Selected Photo: @Model.FileName</p>
-            }
-            else if (uploadedFile is not null)
-            {
-                <p>Selected Photo: @Model!.FileName</p>
-            }
-            else
-            {
-                <p>No Photo Selected</p>
-            }
+                @* if the model already has a file name (edit scenario), show it, 
+                    otherwise fall back to upload state *@
+                @if (!string.IsNullOrWhiteSpace(Model?.FileName))
+                {
+                    <p>Selected Photo: @Model.FileName</p>
+                }
+                else if (uploadedFile is not null)
+                {
+                    <p>Selected Photo: @Model!.FileName</p>
+                }
+                else
+                {
+                    <p>No Photo Selected</p>
+                }
+            </div>
+
+            <ValidationMessage For="@(() => Model!.FileName)" />
         </div>
 
         <div class="mb-3">
@@ -41,7 +42,15 @@
             <InputText @bind-Value="Model!.Caption" id="caption" placeholder="Caption" class="form-control" />
         </div>
 
-        @if (Model.ImageData?.Length > 0)
+        @if (!string.IsNullOrWhiteSpace(PhotoService.PreviewImageUrl))
+        {
+            <div class="mb-3">
+                <label class="form-label">Preview</label>
+                <br>
+                <img src="@PhotoService.PreviewImageUrl" alt="Preview" class="img-thumbnail" style="max-width: 300px;" />
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(Model.ImageSrc))
         {
             <div class="mb-3">
                 <label class="form-label">Preview</label>
@@ -49,6 +58,17 @@
                 <img src="@Model.ImageSrc" alt="Preview" class="img-thumbnail" style="max-width: 300px;" />
             </div>
         }
+        else
+        {
+            <div class="mb-3">
+                <label class="form-label">Preview</label>
+                <br>
+                <p class="text-muted">No preview available yet.</p>
+            </div>
+        }
+
+        <DataAnnotationsValidator />
+        <ValidationSummary />
         
         <Button type="ButtonType.Submit" class="btn btn-success" Disabled="@IsProcessing">
             @if (IsProcessing)
@@ -82,12 +102,23 @@
 
     private IBrowserFile? uploadedFile;
 
+    private EditContext? CurrentEditContext { get; set; }
+
+    protected override void OnInitialized()
+    {
+        CurrentEditContext = new EditContext(Model);
+    }
+
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
         Console.WriteLine("HandleFileSelected Triggered from PhotoForm.razor!!");
 
         if (e == null || e.FileCount == 0)
+        {
+            PhotoService.PreviewImageUrl = null;
+            uploadedFile = null;
             return;
+        }
 
         uploadedFile = e.File;
         IsProcessing = true;
@@ -97,10 +128,19 @@
             var processed = await PhotoService.HandleFileSelected(uploadedFile);
 
             // update the bound model so parent components see the values
+            var previousTitle = Model.Title;
+            var previousCaption = Model.Caption;
+
             Model.FileName = processed.FileName;
-            Model.ContentType = processed.ContentType;
-            Model.ImageData = processed.ImageData;
-            Model.PreviewData = processed.PreviewData;
+            Model.Title = string.IsNullOrWhiteSpace(processed.Title) ? previousTitle : processed.Title;
+            Model.Caption = string.IsNullOrWhiteSpace(processed.Caption) ? previousCaption : processed.Caption;
+            Model.ImageSrc = processed.ImageSrc;
+
+            if (CurrentEditContext is not null)
+            {
+                var fieldId = new FieldIdentifier(Model, nameof(Model.FileName));
+                CurrentEditContext.NotifyFieldChanged(fieldId);
+            }
         }
         finally
         {
@@ -114,5 +154,7 @@
     private async Task HandleSubmit () {
         Console.WriteLine("HandleSubmit Triggerd from PhotoForm.razor!!");
         await OnValidSubmit.InvokeAsync(null);
+        PhotoService.PreviewImageUrl = null;
+        uploadedFile = null;
     }
 }
