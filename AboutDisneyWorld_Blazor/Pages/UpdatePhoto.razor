@@ -1,10 +1,6 @@
 @page "/updatephoto/{id}"
 @using Amazon.S3
 @using MongoDB.Driver
-@using ImageSharp = SixLabors.ImageSharp 
-@using MongoDB.Bson
-@using SixLabors.ImageSharp
-@using SixLabors.ImageSharp.Processing
 @inject MongoDBPhotoService PhotoService
 @inject IPhotoFormService PhotoFormService
 @inject CloudflareR2Service CloudflareR2Service

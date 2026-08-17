@@ -1,6 +1,5 @@
 using AboutDisneyWorld_Blazor.Interfaces;
 using AboutDisneyWorld_Blazor.Services;
-using Amazon.S3;
 using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
