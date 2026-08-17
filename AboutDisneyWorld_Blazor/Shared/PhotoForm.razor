@@ -6,6 +6,14 @@
 
 <div class="mb-3">
     <EditForm EditContext="@CurrentEditContext" OnValidSubmit="HandleSubmit">
+        
+        @if (!string.IsNullOrWhiteSpace(PhotoService.ErrorMessage))
+        {
+            <div class="alert alert-danger mt-3">
+                @PhotoService.ErrorMessage
+            </div>
+        }
+
         <div class="fileselect-group mb-3">
             <div class="d-flex align-items-center gap-2 @CurrentEditContext?.FieldCssClass(() => Model!.FileName)">
                 <label class="form-label btn btn-primary mb-0" for="fileselect">Select Photo to Upload
@@ -154,7 +162,7 @@
     private async Task HandleSubmit () {
         Console.WriteLine("HandleSubmit Triggerd from PhotoForm.razor!!");
         await OnValidSubmit.InvokeAsync(null);
-        PhotoService.PreviewImageUrl = null;
         uploadedFile = null;
+        PhotoService.ResetForm();
     }
 }

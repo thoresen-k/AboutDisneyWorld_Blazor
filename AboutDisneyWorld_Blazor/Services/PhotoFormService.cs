@@ -14,6 +14,7 @@ public class PhotoFormService : IPhotoFormService
     public string? PreviewImageUrl { get; set; }
     public IBrowserFile? UploadedFile { get; set; }
     public bool IsProcessing { get; set; }
+    public string? ErrorMessage { get; set; }
 
     public async Task<Photo> HandleFileSelected(IBrowserFile file)
     {
@@ -29,7 +30,6 @@ public class PhotoFormService : IPhotoFormService
 
         return new Photo{
             FileName = file.Name,
-            ImageSrc = $"https://thoresen-disneyphotos.com/{file.Name}",
         };
     }
 

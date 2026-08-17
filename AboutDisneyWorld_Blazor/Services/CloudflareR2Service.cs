@@ -44,8 +44,7 @@ public class CloudflareR2Service
         };
 
         var response = await s3Client.PutObjectAsync(request);
-
-        Console.WriteLine("ETag: {0}", response.ETag);
+        Console.WriteLine("ETag: {0}", response.ETag);        
     }
 
     public async Task DeleteObject(Photo photo)

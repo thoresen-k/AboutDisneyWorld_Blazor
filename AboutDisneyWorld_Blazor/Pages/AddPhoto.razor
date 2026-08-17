@@ -1,8 +1,10 @@
 ﻿@page "/addphoto"
-@using MongoDB.Bson
+@using MongoDB.Driver
 @using SixLabors.ImageSharp
 @using SixLabors.ImageSharp.Processing
+@using Amazon.S3
 @inject MongoDBPhotoService PhotoService
+@inject IPhotoFormService PhotoFormService
 @inject CloudflareR2Service CloudflareR2Service
 @inject IWebHostEnvironment Env
 @inject NavigationManager Navigation
@@ -32,27 +34,46 @@
     private async Task InsertPhoto()
     {
         isAdding = true;
-        Console.WriteLine($"Title: {newPhoto.Title}");
-        Console.WriteLine($"Name: {newPhoto.FileName}");
 
-        if (!string.IsNullOrWhiteSpace(newPhoto.FileName) && !string.IsNullOrWhiteSpace(newPhoto.Title))
+        try 
         {
-            await PhotoService.AddAsync(newPhoto);
-            Console.WriteLine("Photo added to MongoDB");
+            await CloudflareR2Service.PutObject(file);
+            Console.WriteLine($"Photo added to Cloudflare");
             
-            if(file is not null)
-            {
-                await CloudflareR2Service.PutObject(file);
-            }
+            newPhoto.ImageSrc = $"https://thoresen-disneyphotos.com/{newPhoto.FileName}";
+            
+            await PhotoService.AddAsync(newPhoto);
+            Console.WriteLine($"Photo added to Mongo");
 
-            Console.WriteLine("Photo added to Cloudflare");            
+            Navigation.NavigateTo("/");
         }
-        else
+        catch(AmazonS3Exception awsEx)
         {
-            Console.WriteLine("Missing file or title");
+            PhotoFormService.ErrorMessage = "The image upload failed. Please try again.";
+            
+            Console.WriteLine($"Cloudflare error code: {awsEx.ErrorCode}");
+            Console.WriteLine($"Cloudflare error message: {awsEx.Message}");
         }
+        catch(MongoException mongoEx)
+        {
+            PhotoFormService.ErrorMessage = "The image upload failed. Please try again.";
 
-        Navigation.NavigateTo("/");
-        isAdding = false;
+            Console.WriteLine($"Mongo upload failed: {mongoEx.Message}");
+
+            // Cleanup Cloudflare
+            try 
+            {
+                await CloudflareR2Service.DeleteObject(newPhoto);
+            }
+            catch(AmazonS3Exception awsEx)
+            {
+                Console.WriteLine($"Cloudflare error code: {awsEx.ErrorCode}");
+                Console.WriteLine($"Cloudflare error message: {awsEx.Message}");
+            }
+        }
+        finally
+        {
+            isAdding = false;
+        }
     }
 }
