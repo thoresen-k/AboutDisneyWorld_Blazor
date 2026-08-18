@@ -29,15 +29,15 @@
 
         try
         {
-            Photo fullPhoto = await PhotoService.GetPhotoByIdAsync(id);
+            photo = await PhotoService.GetPhotoByIdAsync(id);
             if(photo is null)
             {
                 PhotoFormService.ErrorMessage = "Failed to get photo. Please refresh the page.";
             }
             else
             {
-                photo = ClonePhoto(fullPhoto);
-                origPhoto = ClonePhoto(fullPhoto);
+                photo = ClonePhoto(photo);
+                origPhoto = ClonePhoto(photo);
             }
         }
         catch(MongoException mongoEx)
@@ -78,7 +78,7 @@
 
         try
         {
-            if(file is not null && !string.Equals(file.Name, photo.FileName, StringComparison.OrdinalIgnoreCase))
+            if(file is not null)
             {
                 await CloudflareR2Service.PutObject(file);
                 Console.WriteLine($"Updated photo added to Cloudflare");
@@ -90,7 +90,7 @@
             Console.WriteLine($"Updated photo added to MongoDB");
             mongoUpdateSuccess = true;
 
-            if(file is not null && !string.Equals(file.Name, photo.FileName, StringComparison.OrdinalIgnoreCase) && cloudflareAddSuccess) 
+            if(file is not null) 
             {
                 await CloudflareR2Service.DeleteObject(origPhoto);
                 Console.WriteLine($"Original photo deleted from Cloudflare");
@@ -105,10 +105,9 @@
             Console.WriteLine($"Cloudflare {(!cloudflareDeleteSuccess ? "delete" : "add")} error message: {awsEx.Message}"); 
 
             // If the new image was not uploaded
-            if(!mongoUpdateSuccess)
+            if(!cloudflareAddSuccess)
             {
                 PhotoFormService.ErrorMessage = "Uploading the new image failed. Please try again.";
-                //photo.ImageSrc = $"https://thoresen-disneyphotos.com/{photo.FileName}";
             }
             // If the new photo uploaded but deleting the original photo failed
             else

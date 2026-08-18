@@ -109,9 +109,17 @@
 
     private EditContext? CurrentEditContext { get; set; }
 
-    protected override void OnInitialized()
+    protected override void OnParametersSet()
     {
-        CurrentEditContext = new EditContext(Model);
+        if (Model is null)
+        {
+            Model = new Photo();
+        }
+
+        if (CurrentEditContext is null || CurrentEditContext.Model != Model)
+        {
+            CurrentEditContext = new EditContext(Model);
+        }
     }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
