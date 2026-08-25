@@ -1,0 +1,75 @@
+@inject MongoDBPhotoService PhotoService
+
+@if(isVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" role="dialog">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+            <div class="modal-content">
+                @if(isLoading || selectedPhoto is null)
+                {
+                    <div class="mx-auto modal-body">
+                        <img src="mickeymouse.png" style="height: 50px;"> Loading...
+                    </div>
+                }
+                else{
+                    <div class="modal-header">
+                        <h5 class="modal-title">Full Image: @selectedPhoto.Title</h5>
+                        <Button class="btn-close" @onclick="CloseModal"></Button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Caption: @selectedPhoto.Caption </p>
+                        <p>Uploaded Date: @selectedPhoto.Date</p>
+                        <img src="@fullImageData" class="img-fluid rounded" style="display: block; margin: 0 auto"/>
+                    </div>
+                    <Button class="btn btn-primary mx-auto mb-3 mt-3" style="width: auto;" @onclick="CloseModal">Close</Button>                
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Photo? selectedPhoto { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<Photo> SelectedPhotoChanged { get; set; }
+
+    [Parameter]
+    public bool isVisible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    [Parameter]
+    public bool isLoading { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsLoadingChanged { get; set; }
+
+    private string? fullImageData;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        if(selectedPhoto is not null) 
+        {
+            fullImageData = selectedPhoto.ImageSrc;
+        }
+        isLoading = false;
+        await IsLoadingChanged.InvokeAsync(isLoading);
+    }
+
+    private async Task CloseModal()
+    {
+        isVisible = false;
+        await IsVisibleChanged.InvokeAsync(isVisible);
+
+        isLoading = false;
+        await IsLoadingChanged.InvokeAsync(isLoading);
+
+        selectedPhoto = null;
+        await SelectedPhotoChanged.InvokeAsync(selectedPhoto);
+
+        StateHasChanged();
+    }
+}
