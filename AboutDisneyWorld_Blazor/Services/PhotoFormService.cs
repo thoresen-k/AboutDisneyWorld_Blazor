@@ -1,20 +1,25 @@
 using AboutDisneyWorld_Blazor.Interfaces;
 using AboutDisneyWorld_Blazor.Models;
 using Microsoft.AspNetCore.Components.Forms;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace AboutDisneyWorld_Blazor.Services;
 
 public class PhotoFormService : IPhotoFormService
 {
-    public PhotoFormService()
+    private readonly MongoDBPhotoService _mongo;
+
+    public PhotoFormService(MongoDBPhotoService mongo)
     {
+        _mongo = mongo;
     }
 
     // Form state
     public string? PreviewImageUrl { get; set; }
     public IBrowserFile? UploadedFile { get; set; }
     public bool IsProcessing { get; set; }
-    public string? ErrorMessage { get; set; }
 
     public async Task<Photo> HandleFileSelected(IBrowserFile file)
     {
@@ -26,10 +31,14 @@ public class PhotoFormService : IPhotoFormService
         using var ms = new MemoryStream();
         await stream.CopyToAsync(ms);
         var data = ms.ToArray();
-        PreviewImageUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(data)}";
+
+        var preview = data;
 
         return new Photo{
-            FileName = file.Name,
+            ImageData = data,
+            PreviewData = data,
+            ContentType = !string.IsNullOrWhiteSpace(file.ContentType) ? file.ContentType : "image/jpeg",
+            FileName = file.Name
         };
     }
 
