@@ -25,11 +25,11 @@ else {
                     <p>Title: @photo.Title </p>
                     <p>Caption: @photo.Caption </p>
                     <p>Uploaded Date: @photo.Date</p>
-                    <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; max-height: 300px; width: auto" src="@photo.ImageSrc" alt="@photo.Title" />
+                    <img class="card-img-top mb-3" loading="lazy" style="margin: 0 auto; height: 300px; width: auto" src="@photo.PreviewImageSrc" alt="@photo.Title" />
 
                     <Button class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="() => ShowFullImage(photo.ID.ToString())">View Full Image</Button>
                     <NavLink type="Button" class="btn btn-primary mx-auto mb-3" style="width: auto;" href=@($"/updatephoto/{photo.ID}")>Update Photo</NavLink>
-
+                    
                     <ConfirmDialog @ref="dialog" />
                     <ConfirmDialog @ref="messageDialog" />
 
@@ -41,20 +41,44 @@ else {
     </div>
 }
 
-<MyModal
-    @ref="modal"
-    selectedPhoto="selectedPhoto"
-    @bind-isLoading="loadingModal"
-/>
+@if (isModalVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" @onkeydown="CloseModal" style="background-color: rgba(0,0,0,0.5);" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                @if(loadingModal || selectedPhoto is null)
+                {
+                    <div class="mx-auto modal-body">
+                        <img src="mickeymouse.png" style="height: 50px;"> Loading...
+                    </div>
+                }
+                else{
+                    <div class="modal-header">
+                        <h5 class="modal-title">Full Image: @selectedPhoto.Title</h5>
+                        <Button class="btn-close" @onclick="@(() => CloseModal(null))"></Button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Caption: @selectedPhoto.Caption </p>
+                        <p>Uploaded Date: @selectedPhoto.Date</p>
+                        <img src="@fullImageData" class="img-fluid rounded" style="display: block; margin: 0 auto"/>
+                    </div>
+                    <Button class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="@(() => CloseModal(null))">Close</Button>                
+                }
+            </div>
+        </div>
+    </div>
+}
 
 @code{
     private List<Photo> photos = new();
     private bool loading = false;
     private bool loadingModal = false;
     private Photo? selectedPhoto = null;
+    private string fullImageData = string.Empty;
+    bool isModalVisible = false;
     private ConfirmDialog dialog = default!;
     private ConfirmDialog messageDialog = default!;
-    private MyModal modal = default!;
+
     protected override async Task OnInitializedAsync()
     {
         loading = true;
@@ -64,23 +88,26 @@ else {
         }
         loading = false;
     }
-
+    
     private async Task ShowFullImage(string photoId)
     {
+        loadingModal = true;
+        isModalVisible = true;
         loadingModal = true;
         (var photo, bool success) = await PhotoService.GetPhotoByIdAsync(photoId);
         if(success)
         {
+            loadingModal = false;
             selectedPhoto = photo;
+            fullImageData = photo.ImageSrc;
         }
-        await modal.ShowModal(selectedPhoto);
     }
 
     /* Maybe turn into a class */
     private async Task ShowConfirmationAsync(string photoId)
     {
         string userResponse = string.Empty;
-
+        
         var confirmation = await dialog.ShowAsync(
             title: $"Are you sure you want to delete the selected photo?",
             message1: "This will delete the record forever.\nDo you want to proceed?"
@@ -126,4 +153,15 @@ else {
             );
         }
     }
+
+    private void CloseModal(KeyboardEventArgs? e)
+    {
+        if (e is null || e.Key == "Escape")
+        {
+            fullImageData = string.Empty;
+            selectedPhoto = null;
+            isModalVisible = false;
+            StateHasChanged();
+        }
+    }   
 }
