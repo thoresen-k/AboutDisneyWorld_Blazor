@@ -39,26 +39,22 @@ else {
             </div>
         }
     </div>
-
-    @if(isModalVisible && selectedPhoto is not null)
-    {
-        <MyModal 
-            @bind-selectedPhoto="selectedPhoto"
-            @bind-isVisible="isModalVisible"
-            @bind-isLoading="loadingModal"
-        />                        
-    }
 }
+
+<MyModal
+    @ref="modal"
+    selectedPhoto="selectedPhoto"
+    @bind-isLoading="loadingModal"
+/>
 
 @code{
     private List<Photo> photos = new();
     private bool loading = false;
     private bool loadingModal = false;
     private Photo? selectedPhoto = null;
-    bool isModalVisible = false;
     private ConfirmDialog dialog = default!;
     private ConfirmDialog messageDialog = default!;
-
+    private MyModal modal = default!;
     protected override async Task OnInitializedAsync()
     {
         loading = true;
@@ -71,21 +67,20 @@ else {
 
     private async Task ShowFullImage(string photoId)
     {
-        isModalVisible = true;
         loadingModal = true;
         (var photo, bool success) = await PhotoService.GetPhotoByIdAsync(photoId);
         if(success)
         {
-            loadingModal = false;
             selectedPhoto = photo;
         }
+        await modal.ShowModal(selectedPhoto);
     }
 
     /* Maybe turn into a class */
     private async Task ShowConfirmationAsync(string photoId)
     {
         string userResponse = string.Empty;
-        
+
         var confirmation = await dialog.ShowAsync(
             title: $"Are you sure you want to delete the selected photo?",
             message1: "This will delete the record forever.\nDo you want to proceed?"
