@@ -1,15 +1,12 @@
 ﻿@page "/"
 @inject MongoDBPhotoService PhotoService
-@inject CloudflareR2Service CloudflareR2Service
 @using BlazorBootstrap
-@using Amazon.S3
-@using MongoDB.Driver
+@inject NavigationManager Navigation
 
 <PageTitle>Disney World Diary</PageTitle>
 
 <h1>@Constants.MainWindowHeader</h1>
 <p>@Constants.MainWindowTagline</p>
-
 
 <NavLink class="btn btn-primary mb-3" href="/addphoto">+ Add Photo</NavLink>
 
@@ -20,15 +17,8 @@
     </div>
 }
 else {
-    @if (!string.IsNullOrWhiteSpace(errorMessage))
-    {
-        <div class="alert alert-danger">
-            @errorMessage
-        </div>
-    }
-
     <div class="row">
-        @foreach (Photo photo in photos)
+        @foreach (var photo in photos)
         {
             <div class="col-md-4 mb-3">
                 <div class="card" style="padding: 10px;">
@@ -43,7 +33,7 @@ else {
                     <ConfirmDialog @ref="dialog" />
                     <ConfirmDialog @ref="messageDialog" />
 
-                    <Button class="btn btn-primary mx-auto mb-3" color="ButtonColor.Danger" @onclick="() => ShowConfirmationAsync(photo)"> Delete</Button>
+                    <Button class="btn btn-primary mx-auto mb-3" color="ButtonColor.Danger" @onclick="() => ShowConfirmationAsync(photo.ID.ToString())"> Delete</Button>
 
                 </div>
             </div>
@@ -51,89 +41,46 @@ else {
     </div>
 }
 
-@if (isModalVisible)
-{
-    <div class="modal fade show d-block" tabindex="-1" @onkeydown="CloseModal" style="background-color: rgba(0,0,0,0.5);" role="dialog">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                @if(loadingModal || selectedPhoto is null)
-                {
-                    <div class="mx-auto modal-body">
-                        <img src="mickeymouse.png" style="height: 50px;"> Loading...
-                    </div>
-                }
-                else{
-                    <div class="modal-header">
-                        <h5 class="modal-title">Full Image: @selectedPhoto.Title</h5>
-                        <Button class="btn-close" @onclick="@(() => CloseModal(null))"></Button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Caption: @selectedPhoto.Caption </p>
-                        <p>Uploaded Date: @selectedPhoto.Date</p>
-                        <img src="@fullImageData" class="img-fluid rounded" style="display: block; margin: 0 auto"/>
-                    </div>
-                    <Button class="btn btn-primary mx-auto mb-3" style="width: auto;" @onclick="@(() => CloseModal(null))">Close</Button>                
-                }
-            </div>
-        </div>
-    </div>
-}
+<MyModal
+    @ref="modal"
+    selectedPhoto="selectedPhoto"
+    @bind-isLoading="loadingModal"
+/>
 
 @code{
     private List<Photo> photos = new();
     private bool loading = false;
     private bool loadingModal = false;
     private Photo? selectedPhoto = null;
-    private string fullImageData = string.Empty;
-    bool isModalVisible = false;
     private ConfirmDialog dialog = default!;
     private ConfirmDialog messageDialog = default!;
-
+    private MyModal modal = default!;
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            loading = true;
-
-            List<Photo> photosList = await PhotoService.GetAllAsync();
+        loading = true;
+        (List<Photo> photosList, bool success) = await PhotoService.GetAllAsync();
+        if(success) {
             photos = photosList;
-            if(photosList is null) 
-            {
-                errorMessage = "Failed to get all photos. Please refresh the page.";
-            }
         }
-        catch (MongoException mongoEx)
-        {
-            errorMessage = "Failed to get all photos. Please refresh the page.";
-
-            Console.WriteLine($"MongoDB Error: {mongoEx.Message}");
-        }
-        finally
-        {
-            loading = false;
-        }
+        loading = false;
     }
 
     private async Task ShowFullImage(string photoId)
     {
         loadingModal = true;
-        isModalVisible = true;
-        loadingModal = true;
         (var photo, bool success) = await PhotoService.GetPhotoByIdAsync(photoId);
         if(success)
         {
-            loadingModal = false;
             selectedPhoto = photo;
-            fullImageData = photo.ImageSrc;
         }
         await modal.ShowModal(selectedPhoto);
     }
 
     /* Maybe turn into a class */
-    private async Task ShowConfirmationAsync(Photo photo)
+    private async Task ShowConfirmationAsync(string photoId)
     {
         string userResponse = string.Empty;
-        
+
         var confirmation = await dialog.ShowAsync(
             title: $"Are you sure you want to delete the selected photo?",
             message1: "This will delete the record forever.\nDo you want to proceed?"
@@ -152,80 +99,31 @@ else {
 
         if (confirmation)
         {
-            try 
-            {
-                await CloudflareR2Service.DeleteObject(photo);
-                cloudflareDeleteSuccess = true;
-                Console.WriteLine($"Photo deleted from Cloudflare");
+            await PhotoService.DeletePhotoByIdAsync(photoId);
+            await messageDialog.ShowAsync(
+                title: "Success",
+                message1: "✅ Item has been deleted successfully.",
+                message2: "Your changes are now permanent.",
+                confirmDialogOptions: options
+            );
 
-                await PhotoService.DeletePhotoByIdAsync(photo.ID);
-                mongoDeleteSuccess = true;
-                Console.WriteLine($"Photo deleted from MongoDB");
-                
-                if(cloudflareDeleteSuccess && mongoDeleteSuccess)
-                {
-                    await messageDialog.ShowAsync(
-                        title: "Success",
-                        message1: "Item has been deleted successfully.",
-                        message2: "Your changes are now permanent.",
-                        confirmDialogOptions: options
-                    );
-                
-                    loading = true;
-                    StateHasChanged();
-                    List<Photo> photosList = await PhotoService.GetAllAsync();
-                    if(photosList is null)
-                    {
-                        errorMessage = "Failed to get all photos. Please refresh the page.";
-                    }
-                    else
-                    {
-                        mongoGetAllSuccess = true;
-                        photos = photosList;
-                    }
-                }
-            }
-            catch (AmazonS3Exception awsEx)
+            loading = true;
+            StateHasChanged();
+            (List<Photo> photosList, bool success) = await PhotoService.GetAllAsync();
+            if(success)
             {
-                errorMessage = "Unable to delete photo. Please try again";
-
-                Console.WriteLine($"Cloudflare error code: {awsEx.ErrorCode}");
-                Console.WriteLine($"Cloudflare error message: {awsEx.Message}");   
+                photos = photosList;
             }
-            catch (MongoException mongoEx)
-            {
-                if(!mongoGetAllSuccess)
-                {
-                    loading = false;
-                    errorMessage = "Failed to get all photos. Please refresh the page.";
-                    Console.WriteLine($"MongoDB Error: {mongoEx.Message}");
-                }
-                else 
-                {
-                    errorMessage = "Unable to delete photo. Please try again.";
-                    Console.WriteLine($"Mongo failure: {mongoEx.Message}");
-                }
-            }
+            loading = false;
         }
         else
         {
             await messageDialog.ShowAsync(
                 title: "Cancelled",
-                message1: "Action was canceled.",
+                message1: "❌ Action was canceled.",
                 message2: "No changes were made.",
                 confirmDialogOptions: options
             );
         }
     }
-
-    private void CloseModal(KeyboardEventArgs? e)
-    {
-        if (e is null || e.Key == "Escape")
-        {
-            fullImageData = string.Empty;
-            selectedPhoto = null;
-            isModalVisible = false;
-            StateHasChanged();
-        }
-    }   
 }

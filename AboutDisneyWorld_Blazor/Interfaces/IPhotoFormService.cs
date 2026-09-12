@@ -9,7 +9,6 @@ public interface IPhotoFormService
     string? PreviewImageUrl { get; set; }
     IBrowserFile? UploadedFile { get; set; }
     bool IsProcessing { get; set; }
-    string? ErrorMessage { get; set; }
     
     // Form operations
     Task<Photo> HandleFileSelected(IBrowserFile file);
