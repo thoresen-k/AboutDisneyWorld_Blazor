@@ -1,9 +1,9 @@
 @page "/updatephoto/{id}"
-@using ImageSharp = SixLabors.ImageSharp 
-@using SixLabors.ImageSharp
-@using SixLabors.ImageSharp.Processing
+@using Amazon.S3
+@using MongoDB.Driver
 @inject MongoDBPhotoService PhotoService
-@inject IWebHostEnvironment Env
+@inject IPhotoFormService PhotoFormService
+@inject CloudflareR2Service CloudflareR2Service
 @inject NavigationManager Navigation
 
 <PageTitle>Update Photo</PageTitle>
@@ -11,12 +11,13 @@
 <div class="mb-3">
     <h3>Update Photo</h3>
 
-    <PhotoForm Model="@photo" OnValidSubmit="EditPhoto" IsProcessing="@isEditing" FormName="EditPhotoForm" />
+    <PhotoForm Model="@photo" OnValidSubmit="EditPhoto" OnChange="HandleFileSelected" IsProcessing="@isEditing" FormName="EditPhotoForm" />
 </div>
 
 @code {
     private Photo photo = new();
-    private string? previewImageUrl;
+    private Photo origPhoto = new();
+    private IBrowserFile? file;
     bool isEditing = false;
 
     [Parameter]
@@ -25,32 +26,104 @@
     protected override async Task OnInitializedAsync()
     {
         Console.WriteLine($"Photo ID from route: {id}");
-        // You can use 'id' to fetch photo details from your service
 
-        (Photo fullPhoto, bool success) = await PhotoService.GetPhotoByIdAsync(id);
-        if(success){
-            photo = fullPhoto;
-            previewImageUrl = photo.ImageSrc;
+        try
+        {
+            photo = await PhotoService.GetPhotoByIdAsync(id);
+            if(photo is null)
+            {
+                PhotoFormService.ErrorMessage = "Failed to get photo. Please refresh the page.";
+            }
+            else
+            {
+                photo = ClonePhoto(photo);
+                origPhoto = ClonePhoto(photo);
+            }
         }
+        catch(MongoException mongoEx)
+        {
+            PhotoFormService.ErrorMessage = "Failed to get photo. Please refresh the page.";
+            Console.WriteLine($"Mongo Error: {mongoEx.Message}");
+        }
+
     }
+    private Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        // the form component already updated the `newPhoto` model,
+        // so just log or perform any additional bookkeeping here.
+        file = e.File;
+        Console.WriteLine($"PhotoForm raised OnChange, current file: {photo.FileName}");
+        return Task.CompletedTask;
+    }
+
+    private static Photo ClonePhoto(Photo source) => new()
+    {
+        ID = source.ID,
+        FileName = source.FileName,
+        Title = source.Title,
+        Caption = source.Caption,
+        ImageSrc = source.ImageSrc,
+        Date = source.Date
+    };
 
     private async Task EditPhoto()
     {
         isEditing = true;
+        bool cloudflareAddSuccess = false;
+        bool cloudflareDeleteSuccess = false;
+        bool mongoUpdateSuccess = false;
+
         Console.WriteLine($"Title: {photo.Title}");
         Console.WriteLine($"Name: {photo.FileName}");
 
-        if (!string.IsNullOrWhiteSpace(photo.FileName) && !string.IsNullOrWhiteSpace(photo.Title))
+        try
         {
-            await PhotoService.UpdateAsync(photo);
-            Console.WriteLine("Photo updated in MongoDB");
-        }
-        else
-        {
-            Console.WriteLine("Missing file or title");
-        }
+            if(file is not null)
+            {
+                await CloudflareR2Service.PutObject(file);
+                Console.WriteLine($"Updated photo added to Cloudflare");
+                cloudflareAddSuccess = true;
+                photo.ImageSrc = $"https://thoresen-disneyphotos.com/{file.Name}";
+            }
 
-        Navigation.NavigateTo("/");
-        isEditing = false;
+            await PhotoService.UpdateAsync(photo);
+            Console.WriteLine($"Updated photo added to MongoDB");
+            mongoUpdateSuccess = true;
+
+            if(file is not null) 
+            {
+                await CloudflareR2Service.DeleteObject(origPhoto);
+                Console.WriteLine($"Original photo deleted from Cloudflare");
+                cloudflareDeleteSuccess = true;
+            }
+
+            Navigation.NavigateTo("/");
+        }
+        catch (AmazonS3Exception awsEx) 
+        {
+            Console.WriteLine($"Cloudflare {(!cloudflareDeleteSuccess ? "delete" : "add")} error code: {awsEx.ErrorCode}");
+            Console.WriteLine($"Cloudflare {(!cloudflareDeleteSuccess ? "delete" : "add")} error message: {awsEx.Message}"); 
+
+            // If the new image was not uploaded
+            if(!cloudflareAddSuccess)
+            {
+                PhotoFormService.ErrorMessage = "Uploading the new image failed. Please try again.";
+            }
+            // If the new photo uploaded but deleting the original photo failed
+            else
+            {
+                PhotoFormService.ErrorMessage = "Deleting the original image failed. Please try again.";
+            }
+        }
+        catch (MongoException mongoEx) 
+        {
+            PhotoFormService.ErrorMessage = "Update failed. Please try again.";
+
+            Console.WriteLine($"Mongo failure: {mongoEx.Message}");
+        }
+        finally
+        {
+            isEditing = false;
+        }
     }
 }

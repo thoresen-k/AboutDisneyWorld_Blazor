@@ -1,12 +1,15 @@
 ﻿@page "/"
 @inject MongoDBPhotoService PhotoService
+@inject CloudflareR2Service CloudflareR2Service
 @using BlazorBootstrap
-@inject NavigationManager Navigation
+@using Amazon.S3
+@using MongoDB.Driver
 
 <PageTitle>Disney World Diary</PageTitle>
 
 <h1>@Constants.MainWindowHeader</h1>
 <p>@Constants.MainWindowTagline</p>
+
 
 <NavLink class="btn btn-primary mb-3" href="/addphoto">+ Add Photo</NavLink>
 
@@ -17,8 +20,15 @@
     </div>
 }
 else {
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
     <div class="row">
-        @foreach (var photo in photos)
+        @foreach (Photo photo in photos)
         {
             <div class="col-md-4 mb-3">
                 <div class="card" style="padding: 10px;">
@@ -33,7 +43,7 @@ else {
                     <ConfirmDialog @ref="dialog" />
                     <ConfirmDialog @ref="messageDialog" />
 
-                    <Button class="btn btn-primary mx-auto mb-3" color="ButtonColor.Danger" @onclick="() => ShowConfirmationAsync(photo.ID.ToString())"> Delete</Button>
+                    <Button class="btn btn-primary mx-auto mb-3" color="ButtonColor.Danger" @onclick="() => ShowConfirmationAsync(photo)"> Delete</Button>
 
                 </div>
             </div>
@@ -81,12 +91,27 @@ else {
 
     protected override async Task OnInitializedAsync()
     {
-        loading = true;
-        (List<Photo> photosList, bool success) = await PhotoService.GetAllAsync();
-        if(success) {
+        try
+        {
+            loading = true;
+
+            List<Photo> photosList = await PhotoService.GetAllAsync();
             photos = photosList;
+            if(photosList is null) 
+            {
+                errorMessage = "Failed to get all photos. Please refresh the page.";
+            }
         }
-        loading = false;
+        catch (MongoException mongoEx)
+        {
+            errorMessage = "Failed to get all photos. Please refresh the page.";
+
+            Console.WriteLine($"MongoDB Error: {mongoEx.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
     }
     
     private async Task ShowFullImage(string photoId)
@@ -104,7 +129,7 @@ else {
     }
 
     /* Maybe turn into a class */
-    private async Task ShowConfirmationAsync(string photoId)
+    private async Task ShowConfirmationAsync(Photo photo)
     {
         string userResponse = string.Empty;
         
@@ -126,28 +151,66 @@ else {
 
         if (confirmation)
         {
-            await PhotoService.DeletePhotoByIdAsync(photoId);
-            await messageDialog.ShowAsync(
-                title: "Success",
-                message1: "✅ Item has been deleted successfully.",
-                message2: "Your changes are now permanent.",
-                confirmDialogOptions: options
-            );
-
-            loading = true;
-            StateHasChanged();
-            (List<Photo> photosList, bool success) = await PhotoService.GetAllAsync();
-            if(success)
+            try 
             {
-                photos = photosList;
+                await CloudflareR2Service.DeleteObject(photo);
+                cloudflareDeleteSuccess = true;
+                Console.WriteLine($"Photo deleted from Cloudflare");
+
+                await PhotoService.DeletePhotoByIdAsync(photo.ID);
+                mongoDeleteSuccess = true;
+                Console.WriteLine($"Photo deleted from MongoDB");
+                
+                if(cloudflareDeleteSuccess && mongoDeleteSuccess)
+                {
+                    await messageDialog.ShowAsync(
+                        title: "Success",
+                        message1: "Item has been deleted successfully.",
+                        message2: "Your changes are now permanent.",
+                        confirmDialogOptions: options
+                    );
+                
+                    loading = true;
+                    StateHasChanged();
+                    List<Photo> photosList = await PhotoService.GetAllAsync();
+                    if(photosList is null)
+                    {
+                        errorMessage = "Failed to get all photos. Please refresh the page.";
+                    }
+                    else
+                    {
+                        mongoGetAllSuccess = true;
+                        photos = photosList;
+                    }
+                }
             }
-            loading = false;
+            catch (AmazonS3Exception awsEx)
+            {
+                errorMessage = "Unable to delete photo. Please try again";
+
+                Console.WriteLine($"Cloudflare error code: {awsEx.ErrorCode}");
+                Console.WriteLine($"Cloudflare error message: {awsEx.Message}");   
+            }
+            catch (MongoException mongoEx)
+            {
+                if(!mongoGetAllSuccess)
+                {
+                    loading = false;
+                    errorMessage = "Failed to get all photos. Please refresh the page.";
+                    Console.WriteLine($"MongoDB Error: {mongoEx.Message}");
+                }
+                else 
+                {
+                    errorMessage = "Unable to delete photo. Please try again.";
+                    Console.WriteLine($"Mongo failure: {mongoEx.Message}");
+                }
+            }
         }
         else
         {
             await messageDialog.ShowAsync(
                 title: "Cancelled",
-                message1: "❌ Action was canceled.",
+                message1: "Action was canceled.",
                 message2: "No changes were made.",
                 confirmDialogOptions: options
             );
