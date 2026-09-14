@@ -18,7 +18,7 @@ public class PhotoFormService : IPhotoFormService
 
     public async Task<Photo> HandleFileSelected(IBrowserFile file)
     {
-        Console.WriteLine($"HandleFileSelected from PhotoFormService: {file.Name}, size: {file.Size}, content type: {file.ContentType}");
+        Console.WriteLine($"HandleFileSelected from PhotoFormService: {file.Name}, size: {file.Size}");
         if (file == null) throw new ArgumentNullException(nameof(file));
 
         UploadedFile = file;

@@ -37,7 +37,6 @@ public class CloudflareR2Service
         {
             BucketName = bucketName,
             Key = file.Name,
-            ContentType = file.ContentType,
             InputStream = memoryStream,
             DisablePayloadSigning = true,
             DisableDefaultChecksumValidation = true
