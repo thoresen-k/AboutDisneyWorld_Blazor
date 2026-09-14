@@ -18,7 +18,7 @@ namespace AboutDisneyWorld_Blazor.Models
 
         public string Caption { get; set; } = string.Empty;
         
-        public string ImageSrc => $"data:{ContentType};base64,{Convert.ToBase64String(ImageData)}";
+        public string ImageSrc { get; set; } = string.Empty;
 
         public DateTime Date { get; set; } = DateTime.UtcNow;
     }
