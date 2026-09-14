@@ -64,6 +64,7 @@ else {
     private Photo? selectedPhoto = null;
     private ConfirmDialog dialog = default!;
     private ConfirmDialog messageDialog = default!;
+    private string errorMessage = string.Empty;
     private MyModal modal = default!;
     protected override async Task OnInitializedAsync()
     {
@@ -93,11 +94,8 @@ else {
     private async Task ShowFullImage(string photoId)
     {
         loadingModal = true;
-        (var photo, bool success) = await PhotoService.GetPhotoByIdAsync(photoId);
-        if(success)
-        {
-            selectedPhoto = photo;
-        }
+        var photo = await PhotoService.GetPhotoByIdAsync(photoId);
+        selectedPhoto = photo;
         await modal.ShowModal(selectedPhoto);
     }
 
@@ -105,6 +103,9 @@ else {
     private async Task ShowConfirmationAsync(Photo photo)
     {
         string userResponse = string.Empty;
+        bool cloudflareDeleteSuccess = false;
+        bool mongoDeleteSuccess = false;
+        bool mongoGetAllSuccess = false;
 
         var confirmation = await dialog.ShowAsync(
             title: $"Are you sure you want to delete the selected photo?",
